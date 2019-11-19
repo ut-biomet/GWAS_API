@@ -1,8 +1,8 @@
 # required packages
 require(gaston) # for many functions
-## To install pcamethods
-# source("https://bioconductor.org/biocLite.R")
-# biocLite("pcaMethods")
+## To install pcamethods (a package in Bioconductor)
+# install.packages("BiocManager")
+# BiocManager::install("pcaMethods")
 require(pcaMethods) # for probablistic PCA (a package in Bioconductor)
 require(BGLR) # for Bayesian regression
 # read file
