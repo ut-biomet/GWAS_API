@@ -123,6 +123,8 @@ LD.plot(ld, snp.positions = bm.wom@snps$pos[from:to])
 
 #* Table of selected SNPs
 #* @tag SNP Table
+#* @param adj_method either bonferroni or FDR
+#* @param gwa the GWAS object
 #* @get /datatable
 #* @serializer htmlwidget
 function(gwa, adj_method){
