@@ -11,6 +11,7 @@
 #
 
 library(plumber)
+library(digest)
 
 
 #* @apiTitle GWAS API
@@ -151,8 +152,27 @@ function(markerDataId, phenoDataId, test, trait, trait_type, fixed){
     }
   }
   
-  # OUTPUT
-  "DONE ! :-)"
+  # SAVE MODEL
+  creatTime <- Sys.time()
+  modName <- paste0("GWAS_",
+                    markerDataId, "_", phenoDataId, "_", trait,"_",
+                    as.numeric(creatTime))
+  modName <- gsub("\\.", "-", modName)
+  modPath <- paste0("models/", modName, ".Rdata")
+  save(gwa, file = modPath)
+
+  # TODO:
+  # write models's information in a database
+  # so that endpoints to check already fitted model can be created
+  #
+  # fp <- digest(file = modPath) # model's file finger print (hash)
+  # 
+  #
+  
+  data.frame(
+    message = "Model created !",
+    modelId = modName
+  )
 }
 
 ##### Plots #####

@@ -1,3 +1,8 @@
+###### repository specific ingnore rules ######
+# do not track all created models
+models/
+
+###### R language ingnore rules ######
 # History files
 .Rhistory
 .Rapp.history
