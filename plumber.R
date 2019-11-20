@@ -63,7 +63,7 @@ function(msg=""){
 #* @param trait The trait to be analyzed
 #* @param trait_type The trait type: quantitative or binary
 #* @param fixed The option chosen for fixed effect (number of PC, or kmeans, or none)
-#* @get /gwas
+#* @post /gwas
 function(markerDataId, phenoDataId, test, trait, trait_type, fixed){
   ### GET DATA
   bm.wom <- loadData(markerDataId, phenoDataId, trait)
