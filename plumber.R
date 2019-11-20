@@ -12,6 +12,7 @@
 
 library(plumber)
 library(digest)
+library(DT)
 
 
 #* @apiTitle GWAS API
@@ -180,10 +181,17 @@ function(markerDataId, phenoDataId, test, trait, trait_type, fixed){
 #* Manhattan plot
 #* @tag ManhattanPlot
 #* @param adj_method either bonferroni or FDR
-#* @param gwa the GWAS object
+#* @param modelId GWAS model id
 #* @png
 #* @get /manplot
-function(gwa, adj_method){
+function(modelId, adj_method){
+  
+  # LOAD MODEL
+  load(paste0("models/", modelId, ".Rdata"))
+  # can also be done in an external function: gwa <- loadModel(modelId) 
+  
+  
+  # CREATE PLOT
   p.adj <- p.adjust(gwa$p, method = adj_method)
   col <- rep("black", nrow(gwa))
   col[gwa$chr %% 2 == 0] <- "gray50"
@@ -191,16 +199,31 @@ function(gwa, adj_method){
   manhattan(gwa, pch = 20, col = col)
 }
 
+
+
 #* LD plot
 #* @tag LDPlot
-#* @param bm.wom
-#* @param from
-#* @param to
+#* @param markerDataId
+#* @param from (total number of SNP should be < 50)
+#* @param to (total number of SNP should be < 50)
 #* @png
 #* @get /LDplot
-function(bm.wom, from, to){
+function(markerDataId, from, to){
+  
+  from <- as.numeric(from)
+  to <- as.numeric(to)
+  
+  if (to - from > 50) {
+    return("ERROR: number of SNP should be < 50.")
+  }
+  
+  ### GET DATA 
+  bm.wom <- getMarkerData(markerDataId)
+  
+  
+  # COMPUTE LD
   ld <- LD(bm.wom, c(from, to), measure = "r2")
-LD.plot(ld, snp.positions = bm.wom@snps$pos[from:to])
+  LD.plot(ld, snp.positions = bm.wom@snps$pos[from:to])
 }
 
 ##### Tables output #####
@@ -208,10 +231,17 @@ LD.plot(ld, snp.positions = bm.wom@snps$pos[from:to])
 #* Table of selected SNPs
 #* @tag SNP Table
 #* @param adj_method either bonferroni or FDR
-#* @param gwa the GWAS object
+#* @param modelId GWAS model id
 #* @get /datatable
 #* @serializer htmlwidget
-function(gwa, adj_method){
+function(modelId, adj_method){
+  
+  # LOAD MODEL
+  load(paste0("models/", modelId, ".Rdata"))
+  # can also be done in an external function: gwa <- loadModel(modelId) 
+  
+  
+  # CREATE DATATABLE
   p.adj <- p.adjust(gwa$p, method = adj_method)
   datatable(gwa[p.adj < 0.05, ])
 }
