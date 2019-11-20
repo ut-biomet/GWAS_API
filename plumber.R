@@ -19,31 +19,24 @@ library(plumber)
 # required packages
 require(gaston) # for many functions
 
+# load API's functions
+sapply(list.files("functions",
+                  pattern = "*\\.R$", # all files ending by ".R"
+                  full.names = TRUE),
+       source)
+
+
 #####################################################################
-# load data
-# read file
-bm <- read.vcf("data/HDRA-G6-4-RDP1-RDP2-NIAS.AGCT_MAF005MIS001NR.vcf.gz")
-# read phenotypic data and line data
-pheno <- read.csv("data/RiceDiversityPheno4GWASGS.csv", row.names = 1)
-# select markers with traits and remove monomorphic markers
-bm.wp <- bm[bm@ped$id %in% rownames(pheno),]
-bm.wp <- select.snps(bm.wp, maf > 0)
-
-# extract the score matrix and reorder the scores in the same order as the phenotypic data
-gt.score <- as.matrix(bm.wp)
-gt.score <- gt.score[rownames(pheno),]
-
-# k-means clustering
-tmp <- na.omit(t(gt.score))
-km <- kmeans(t(tmp), centers = 5, nstart = 10, iter.max = 100)
-grp <- as.factor(km$cluster)
-
 ## EXAMPLE
-trait="Seed.length.width.ratio"
-trait_type="quantitative"
-test = "lrt"
 fixed = 4
+trait_type = "quantitative"
+trait = "Seed.length.width.ratio"
+test = "lrt" # (lrt, Wald or score)
+phenoDataId <- "testPhenoData01"
+markerDataId <- "testMarkerData01"
+# dataId <- "testPhenoData01"
 adj_method = "bonferroni"
+
 ######################################################################
 
 #* Echo back the input
@@ -53,43 +46,114 @@ function(msg=""){
   list(msg = paste0("The message is: '", msg, "'"))
 }
 
-##### GWAS #####
 
-#* Compute the GWAS object
-#* @tag GWAS
+
+
+
+
+##### GWAS #####
+ 
+#* Fit a GWAS model
+#* @tag Model fitting GWAS
+#* @param markerDataId id of the genetic data
+#* @param phenoDataId id of the phenotypic data
 #* @param test The testing method (lrt, Wald or score)
 #* @param trait The trait to be analyzed
 #* @param trait_type The trait type: quantitative or binary
 #* @param fixed The option chosen for fixed effect (number of PC, or kmeans, or none)
 #* @get /gwas
-function(test, trait, trait_type, fixed){
-  # put trait in bed matrix 
-  bm.wp@ped$pheno <- pheno[bm.wp@ped$id, trait]
-  # remove lines with missing trait
-  bm.wom <- select.inds(bm.wp, !is.na(bm.wp@ped$pheno))
+function(markerDataId, phenoDataId, test, trait, trait_type, fixed){
+  ### GET DATA
+  bm.wom <- loadData(markerDataId, phenoDataId, trait)
+  
+  ### CLEAN DATA
   # keep marker with a large enough MAF (>0.05) and low missing rate (callrate>0.9)
   bm.wom <- select.snps(bm.wom, maf > 0.05)
   bm.wom <- select.snps(bm.wom, callrate > 0.9)
+  
+  
+  ### ????
   # Compute K (=Genetic relationship matrix for the lines with observed/non missing trait)
   K <- GRM(bm.wom)
-  # Compute fixed effects from k-means clustering
-  Xkm <- model.matrix(~grp[bm.wom@ped$id])
- 
-  if (is.numeric(fixed)){
-    if (test!="score"){gwa=association.test(bm.wom, method = "lmm", response = trait_type, test = test, eigenK = eigen(K), p = fixed)
-    }else{
-      gwa=association.test(bm.wom, method = "lmm", response = trait_type, test = "score", K = K, eigenK = eigen(K), p = fixed)}
-  }else if(fixed=="kmeans"){
-    if (test!="score"){gwa=association.test(bm.wom, method = "lmm", response = trait_type, test = test, X=Xkm, eigenK = eigen(K))
-    }else{
-      gwa=association.test(bm.wom, method = "lmm", response = trait_type, test = "score", K = K, X=Xkm, eigenK = eigen(K))}
-  }else if (is.null(fixed)){
-    if (test!="score"){gwa=association.test(bm.wom, method = "lmm", response = trait_type, test = test, eigenK = eigen(K))
-    }else{
-      gwa=association.test(bm.wom, method = "lmm", response = trait_type, test = "score", K = K, eigenK = eigen(K))}
-  }  
-  gwa
+  
+  ### FIT MODEL
+  if (is.numeric(fixed)) {
+    if (test != "score") {
+      gwa <- association.test(
+        bm.wom,
+        method = "lmm",
+        response = trait_type,
+        test = test,
+        eigenK = eigen(K),
+        p = fixed)
+    } else {
+      gwa <- association.test(
+        bm.wom,
+        method = "lmm",
+        response = trait_type,
+        test = "score",
+        K = K,
+        eigenK = eigen(K),
+        p = fixed
+      )
+    }
+  } else if (fixed == "kmeans") {
+    
+    # extract the score matrix 
+    gt.score <- as.matrix(bm.wom)
+    
+    # k-means clustering
+    tmp <- na.omit(t(gt.score))
+    km <- kmeans(t(tmp), centers = 5, nstart = 10, iter.max = 100)
+    grp <- as.factor(km$cluster)
+    
+    # Compute fixed effects from k-means clustering
+    Xkm <- model.matrix(~grp[bm.wom@ped$id])
+    
+    if (test != "score") {
+      gwa <- association.test(
+        bm.wom,
+        method = "lmm",
+        response = trait_type,
+        test = test,
+        X = Xkm,
+        eigenK = eigen(K)
+      )
+    } else{
+      gwa <- association.test(
+        bm.wom,
+        method = "lmm",
+        response = trait_type,
+        test = "score",
+        K = K,
+        X = Xkm,
+        eigenK = eigen(K)
+      )
+    }
+  } else if (is.null(fixed)) {
+    if (test != "score") {
+      gwa <- association.test(
+        bm.wom,
+        method = "lmm",
+        response = trait_type,
+        test = test,
+        eigenK = eigen(K)
+      )
+    } else{
+      gwa <- association.test(
+        bm.wom,
+        method = "lmm",
+        response = trait_type,
+        test = "score",
+        K = K,
+        eigenK = eigen(K)
+      )
+    }
   }
+  
+  # OUTPUT
+  "DONE ! :-)"
+}
 
 ##### Plots #####
 
@@ -132,4 +196,4 @@ function(gwa, adj_method){
   datatable(gwa[p.adj < 0.05, ])
 }
 
-sel=gt.score[,colnames(gt.score)%in% gwa[p.adj < 0.05, "id"]]
+# sel=gt.score[,colnames(gt.score)%in% gwa[p.adj < 0.05, "id"]]
