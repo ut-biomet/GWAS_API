@@ -1,0 +1,13 @@
+# place this file in "/etc/systemd/system/"
+[Unit]
+Description=GWAS Plumber API
+# After=postgresql 
+# (or mariadb, mysql, etc if you use a DB with Plumber, otherwise leave this commented)
+
+[Service]
+ExecStart=/usr/bin/Rscript /home/userplumberapi/plumberApi/GWAS_API/launchApp.R 8081
+Restart=on-abnormal
+WorkingDirectory=/home/userplumberapi/plumberApi/GWAS_API
+
+[Install]
+WantedBy=multi-user.target

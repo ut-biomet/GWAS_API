@@ -11,7 +11,7 @@
 #'
 #' @return bed.matrix
 getMarkerData <- function(dataId){
-  read.vcf(paste0("data/markers/", dataId, ".vcf.gz"))
+  read.vcf(paste0("data/markers/", dataId, ".vcf.gz"), verbose = FALSE)
 }
 
 #' get phenotypic data

@@ -11,6 +11,7 @@ library(DT)
 
 
 address <- "http://127.0.0.1:9596"
+address <- "http://52.193.46.252:8081" # SIP AWS server
 
 # 1 -- Fit a new model:
 fixed = 4
