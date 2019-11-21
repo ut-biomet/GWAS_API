@@ -10,6 +10,8 @@ library(magick)
 library(DT)
 
 
+address <- "http://127.0.0.1:9596"
+
 # 1 -- Fit a new model:
 fixed = 4
 trait_type = "quantitative"
@@ -20,7 +22,7 @@ markerDataId <- "testMarkerData01"
 
 
 
-reqFitModel <- POST(paste0("http://127.0.0.1:6831/gwas?",
+reqFitModel <- POST(paste0(address,"/gwas?",
                            "fixed=", fixed,
                            "&trait_type=", trait_type,
                            "&trait=", trait,
@@ -39,12 +41,12 @@ modId <- content(reqFitModel)[[1]]$modelId
 # 2 -- ManhattanPlot
 adj_method = "bonferroni"
 
-reqManhattan <- GET(paste0("http://127.0.0.1:6831/manplot?",
-                            "modelId=", modId,
-                            "&adj_method=", adj_method))
+reqManhattan <- GET(paste0(address,"/manplot?",
+                           "modelId=", modId,
+                           "&adj_method=", adj_method))
 print(reqManhattan)
 
-image_read(paste0("http://127.0.0.1:6831/manplot?",
+image_read(paste0(address,"/manplot?",
                   "modelId=", modId,
                   "&adj_method=", adj_method))
 
@@ -56,13 +58,13 @@ image_read(paste0("http://127.0.0.1:6831/manplot?",
 from <- 1
 to <- 11
 
-reqLDplot <- GET(paste0("http://127.0.0.1:6831/LDplot?",
+reqLDplot <- GET(paste0(address,"/LDplot?",
                         "&markerDataId=", markerDataId,
                         "&from=", from,
                         "&to=", to))
 print(reqLDplot)
 
-image_read(paste0("http://127.0.0.1:6831/LDplot?",
+image_read(paste0(address,"/LDplot?",
                   "&markerDataId=", markerDataId,
                   "&from=", from,
                   "&to=", to))
@@ -72,7 +74,7 @@ image_read(paste0("http://127.0.0.1:6831/LDplot?",
 
 
 # 4 -- DataTable
-reqDT <- GET(paste0("http://127.0.0.1:6831/datatable?",
+reqDT <- GET(paste0(address,"/datatable?",
                     "modelId=", modId,
                     "&adj_method=", adj_method))
 print(reqDT)

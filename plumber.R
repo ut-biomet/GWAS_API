@@ -10,16 +10,16 @@
 #    https://www.rplumber.io/
 #
 
+# required packages
 library(plumber)
 library(digest)
 library(DT)
-
+require(gaston) # for many functions
 
 #* @apiTitle GWAS API
 #* @apiDescription First test for GWAS API
 
-# required packages
-require(gaston) # for many functions
+
 
 # load API's functions
 sapply(list.files("functions",
@@ -27,17 +27,6 @@ sapply(list.files("functions",
                   full.names = TRUE),
        source)
 
-
-#####################################################################
-## EXAMPLE
-fixed = 4
-trait_type = "quantitative"
-trait = "Seed.length.width.ratio"
-test = "lrt" # (lrt, Wald or score)
-phenoDataId <- "testPhenoData01"
-markerDataId <- "testMarkerData01"
-# dataId <- "testPhenoData01"
-adj_method = "bonferroni"
 
 ######################################################################
 
@@ -65,6 +54,12 @@ function(msg=""){
 #* @param fixed The option chosen for fixed effect (number of PC, or kmeans, or none)
 #* @post /gwas
 function(markerDataId, phenoDataId, test, trait, trait_type, fixed){
+  
+  ### CHECK PARAMETERS 
+  if (!is.na(as.numeric(fixed))) {
+    fixed <- as.numeric(fixed)
+  }
+  
   ### GET DATA
   bm.wom <- loadData(markerDataId, phenoDataId, trait)
   
