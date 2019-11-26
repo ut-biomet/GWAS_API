@@ -23,7 +23,7 @@ require(gaston) # for many functions
 
 # load API's functions
 sapply(list.files("functions",
-                  pattern = "*\\.R$", # all files ending by ".R"
+                  pattern = "\\.R$", # all files ending by ".R"
                   full.names = TRUE),
        source)
 
