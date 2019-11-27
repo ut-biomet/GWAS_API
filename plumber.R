@@ -14,7 +14,7 @@
 library(plumber)
 library(digest)
 library(DT)
-require(gaston) # for many functions
+library(gaston) # for many functions
 
 #* @apiTitle GWAS API
 #* @apiDescription First test for GWAS API

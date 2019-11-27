@@ -1,16 +1,16 @@
 #!/usr/bin/Rscript
-arg <- commandArgs(trailingOnly = TRUE)
+arg <- commandArgs()
 
-if (length(arg) == 0) {
-    port <- 8080
-} else if (length(arg) == 1) {
-    port <- as.numeric(arg)
-    if (is.na(port)) stop("provide only the port number eg: Rscript launchApp.R 8080")
-} else stop("Too many arguments provided.")
 
-.libPaths("/home/userplumberapi/R/x86_64-pc-linux-gnu-library/3.4")
+# extract working directory :
+pat <- "(?<=(--file=)).*(?=\\/[a-zA-Z0-9\\_\\-]*\\.R$)"
+wd <- regmatches(arg[4], gregexpr(pat, arg[4], perl = TRUE))[[1]][1]
+setwd(wd)
+print(paste0("set working directory to: ", wd))
+cat("\n")
 
-api <- plumber::plumb('/home/userplumberapi/plumberApi/GWAS_API/plumber.R')
-api$run(port = port,
+# run API
+api <- plumber::plumb("plumber.R")
+api$run(port = 8000,
         host = '0.0.0.0',
         swagger = TRUE)
