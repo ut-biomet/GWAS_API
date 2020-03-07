@@ -188,18 +188,52 @@ function(markerDataId, phenoDataId, test, trait, trait_type, fixed){
   )
 }
 
+#* Fit a GWAS model (type 2)
+#* @tag Model fitting GWAS
+#* @param markerDataId id of the genetic data
+#* @param phenoDataId id of the phenotypic data
+#* @param test The testing method (lrt, Wald or score)
+#* @param fixed The option chosen for fixed effect (number of PC, or none (0)) 
+#* @param maf
+#* @param callrate
+#* @post /gwas2
+function(markerDataId, phenoDataId, test, fixed, tresh.maf, tresh.callrate){
+  
+  ### CHECK PARAMETERS
+  if (!is.na(as.numeric(fixed))) {
+    fixed <- as.numeric(fixed)
+  } else {
+  	fixed <- 0
+  }
+  
+  ### GET DATA
+  data <- loadData2(markerDataId, phenoDataId)
+  
+  ### GWAS for each trait one by one
+  res <- vector("list", ncol(data$phenoData))
+  for(i in 1:ncol(data$phenoData)) {
+  	trait <- colnames(data$phenoData)[i]
+  	print(trait)
+  	res[[i]] <- gwas(data, trait, test, fixed, tresh.maf, tresh.callrate)
+  }
+  
+  return res
+}
+
+
 ##### Plots #####
 
-#* Manhattan plot
+#* Manhattan plot (type 2)
 #* @tag ManhattanPlot
-#* @param adj_method either bonferroni or FDR
 #* @param modelId GWAS model id
+#* @param adj_method either bonferroni or FDR
+#* @param thresh.p
 #* @png
 #* @get /manplot
-function(modelId, adj_method){
+function(result, adj_method, thresh.p){
   
   # LOAD MODEL
-  load(paste0("models/", modelId, ".Rdata"))
+  load(paste0("models/", result$modelId, ".Rdata"))
   # can also be done in an external function: gwa <- loadModel(modelId) 
   
   
@@ -207,8 +241,8 @@ function(modelId, adj_method){
   p.adj <- p.adjust(gwa$p, method = adj_method)
   col <- rep("black", nrow(gwa))
   col[gwa$chr %% 2 == 0] <- "gray50"
-  col[p.adj < 0.05] <- "green"
-  manhattan(gwa, pch = 20, col = col)
+  col[p.adj < thresh.p] <- "green"
+  manhattan(gwa, pch = 20, col = col, main = result$trait, sub = paste0(result$modelId))
 }
 
 
@@ -242,11 +276,12 @@ function(markerDataId, from, to){
 
 #* Table of selected SNPs
 #* @tag SNP Table
-#* @param adj_method either bonferroni or FDR
 #* @param modelId GWAS model id
+#* @param adj_method either bonferroni or FDR
+#* @param thresh.p
 #* @get /datatable
 #* @serializer htmlwidget
-function(modelId, adj_method){
+function(modelId, adj_method, thresh.p){
   
   # LOAD MODEL
   load(paste0("models/", modelId, ".Rdata"))
@@ -255,7 +290,7 @@ function(modelId, adj_method){
   
   # CREATE DATATABLE
   p.adj <- p.adjust(gwa$p, method = adj_method)
-  datatable(gwa[p.adj < 0.05, ])
+  datatable(gwa[p.adj < thresh.p, ])
 }
 
 # sel=gt.score[,colnames(gt.score)%in% gwa[p.adj < 0.05, "id"]]

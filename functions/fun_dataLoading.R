@@ -10,7 +10,7 @@
 #' @param dataId 
 #'
 #' @return bed.matrix
-getMarkerData <- function(dataId){
+getMarkerData <- function(dataId) {
   read.vcf(paste0("data/markers/", dataId, ".vcf.gz"), verbose = FALSE)
 }
 
@@ -27,6 +27,19 @@ getPhenoData <- function(dataId, trait){
   dta <- as.data.frame(dta[, trait],
                        row.names = row.names(dta))
   names(dta) <- trait
+  dta
+}
+
+
+#' get phenotypic data (type 2)
+#'
+#' @param dataId 
+#'
+#' @return data.frame
+getPhenoData2 <- function(dataId){
+  # get data
+  dta <- read.csv(paste0("data/pheno/", dataId,".csv"),
+                    row.names = 1)
   dta
 }
 
@@ -56,4 +69,99 @@ loadData <- function(markerDataId, phenoDataId, trait){
   dta <- select.inds(dta, !is.na(dta@ped$pheno))
   
   dta
+}
+
+
+#' get data for GWAS model (type 2)
+#'
+#' @param markerDataId 
+#' @param phenoDataId
+#'
+#' @return 
+loadData2 <- function(markerDataId, phenoDataId){
+  mDta <- getMarkerData(markerDataId)
+  pDta <- getPhenoData2(phenoDataId)
+  
+  # select individuals with traits
+  mDta <- select.inds(mDta, id %in% rownames(pDta))
+  # reorder phenotypic data with id in bed matrix
+  pDta <- pDta[mDta@ped$id,]
+  
+  # remove monomorphic markers
+  mDta <- select.snps(mDta, maf > 0)
+  
+  # calculate genetic relatinoal matrix
+  grm <- GRM(mDta)
+  
+  list(markerData = mDta, phenoData = pDta, grMatrix = grm)
+}
+
+#' perform GWAS
+#'
+#' @param data (markerData, phenoData, grMatrix)
+#' @param trait
+#' @param maf (0 < maf < 0.5)
+#' @param callrate (0 < callrate <= 1)
+#' 
+gwas <- function(data, trait, test, fixed, tresh.maf, tresh.callrate) {
+	
+	### GET DATA
+	bm <- data$markerData
+	bm@ped$pheno <- data$phenoData[, trait]
+	K <- data$grMatrix
+	
+	### FILTER SAMPLES
+	# remove samples with missing phenotypic values
+	bm <- select.inds(bm, !is.na(pheno))
+	K <- K[bm@ped$id, bm@ped$id]
+	
+	### FILTER SNPs
+	# keep marker with a large enough MAF (>0.05) 
+	# and low missing rate (callrate>0.9)
+	bm <- select.snps(bm, maf > thresh.maf)
+	bm <- select.snps(bm, callrate > thresh.callrate)
+  
+  
+	### FIT MODEL
+   	if (test != "score") {
+    	gwa <- association.test(
+        	bm,
+        	method = "lmm",
+        	response = "quantitative",
+        	test = test,
+        	eigenK = eigen(K),
+        	p = fixed)
+    } else {
+    	gwa <- association.test(
+        	bm,
+        	method = "lmm",
+        	response = "quantitative",
+        	test = "score",
+        	K = K,
+        	p = fixed)
+    }
+  
+	# SAVE MODEL
+  	creatTime <- Sys.time()
+  	modelId <- paste0("GWAS_",
+                    markerDataId, "_", phenoDataId, "_", trait,"_",
+                    as.numeric(creatTime))
+  	modelId <- gsub("\\.", "-", modelId)
+  	modPath <- paste0("models/", modelId, ".Rdata")
+  	save(gwa, file = modPath)
+
+  	# TODO:
+  	# write models's information in a database
+  	# so that endpoints to check already fitted model can be created
+  	#
+  	# fp <- digest(file = modPath) # model's file finger print (hash)
+  	# 
+  	#
+  	data.frame(
+    	message = "Model created!",
+    	markerDataId,
+    	phenoDataId,
+    	trait,
+    	modelId
+  	)
 }
