@@ -1,27 +1,40 @@
-FROM rocker/r-base
+FROM trestletech/plumber
 LABEL maintainer="Julien Diot <juliendiot@ut-biomet.org>"
+
+EXPOSE 8080
+
+RUN useradd plumber
 
 RUN apt-get update --allow-releaseinfo-change && apt-get install -y \
     libcurl4 \
     libcurl4-openssl-dev \
     libxml2-dev \
-    libssl-dev \
+    curl \
     pandoc
 
-RUN R -e "install.packages(c('BGLR', 'digest', 'DT', 'gaston', 'httr', 'magick', 'plumber'))"
+# set and check R package repository
+RUN SNAPSHOT="https://cran.microsoft.com/snapshot/2020-03-17/" && \
+    if [ $(curl -s -o /dev/null -w "%{http_code}" $SNAPSHOT) = "200" ] ; then echo "OK: R pkg repository server accessible." ; else echo "ERROR: R pkg repository server not accessible. status = $(curl -s -o /dev/null -w "%{http_code}" $SNAPSHOT)" ; fi &&\
+    touch /.Rprofile && \
+    echo "options(repos = c(CRAN = '$SNAPSHOT'))" >> ~/.Rprofile
+
+RUN R -e "install.packages(c('BGLR', 'digest', 'DT', 'gaston', 'httr', 'magick'))"
+RUN rm ~/.Rprofile
 
 
 
-EXPOSE 8000
+# get application code
+COPY ./ /GWAS_API
+
+# using git (app repo must be public)
+# RUN git clone --depth=1 https://github.com/ut-biomet/GWAS_API.git
+
+RUN chown plumber.plumber -R /GWAS_API
+RUN chmod -R 774 /GWAS_API
 
 
-# V1: the running argument must be the plumber.R file
-# pay attention to the working directory of the application
-# ENTRYPOINT ["R", "-e", "print(commandArgs());pr <- plumber::plumb(commandArgs()[4]);print(regmatches(commandArgs()[4], gregexpr('.*(?=\\\\/[a-zA-Z0-9\\\\_\\\\-]*\\\\.R$)',commandArgs()[4], perl = TRUE))[[1]][1]);setwd(regmatches(commandArgs()[4], gregexpr('.*(?=\\\\/[a-zA-Z0-9\\\\_\\\\-]*\\\\.R$)',commandArgs()[4], perl = TRUE))[[1]][1]);pr$run(host='0.0.0.0', port=8000, swagger = TRUE)"]
-# CMD ["/app/plumber.R"]
 
-# V2: the running argument must be the launchApp.R file
-# the good app's working directory must be mannage in the launchApp.R file
-ENTRYPOINT ["Rscript"]
+USER plumber
 
-CMD ["/app/launchApp.R"]
+ENTRYPOINT []
+CMD R -e "setwd('/GWAS_API'); api <- plumber::plumb('/GWAS_API/plumber.R'); api\$run(port = 8080, host = '0.0.0.0', swagger = TRUE)"

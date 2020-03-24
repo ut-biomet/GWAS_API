@@ -1,6 +1,0 @@
-# using docker:
-# build image:
-docker build -t sipgwasapi path/to/Dokerfile
-
-# run container
-docker run -t -i --rm --name sipGWASAPI -p 8083:8000 -v ~/plumberApi/docker-GWAS_API:/app sipgwasapi /app/launchApp.R
