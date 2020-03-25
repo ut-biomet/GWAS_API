@@ -1,0 +1,28 @@
+image: rocker/verse
+
+stages:
+  - build
+  - test
+  - deploy
+
+before_script:
+  - apt-get update
+  - r -e 'install.packages(c("testthat"))'
+
+buildDockerImage:
+  stage: build
+  script:
+    - ls -la
+    - mkdir testBuild
+    - docker --version
+
+unittest:
+  stage: test
+  script:
+    - ls -la
+    - mkdir testTest
+
+deploy:
+  stage: test
+  script:
+    - ls -la
