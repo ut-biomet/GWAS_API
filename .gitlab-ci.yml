@@ -6,15 +6,17 @@ stages:
   - deploy
 
 before_script:
-  - apt-get update
-  - r -e 'install.packages(c("testthat"))'
+  - echo "hello"
+  # - apt-get update
+  # - r -e 'install.packages(c("testthat"))'
 
 buildDockerImage:
   stage: build
   script:
+    - pwd
     - ls -la
     - mkdir testBuild
-    - docker --version
+    # - docker --version
 
 unittest:
   stage: test
