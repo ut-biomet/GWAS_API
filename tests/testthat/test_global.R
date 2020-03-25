@@ -41,7 +41,7 @@ test_that("POST /gwas", {
   query <- list(
     fixed = 4,
     trait_type = "quantitative",
-    trait = "Seed.length.width.ratio",
+    trait = "Pericarp.color",
     test = "lrt", # (lrt, Wald or score)
     phenoDataId = "testPhenoData01",
     markerDataId = "testMarkerData01"
@@ -58,7 +58,7 @@ test_that("POST /gwas", {
   # test response content
   # test message
   respContent <- content(resp)
-  expect_equal(respContent$message, "Model created !")
+  expect_equal(respContent$message, "Model created")
   
   # test model id
   expect_match(respContent$modelId, "^GWAS_") # start by "GWAS_"
@@ -83,7 +83,8 @@ test_that("GET /manplot", {
   path <- paste0(host,"/manplot")
   query <- list(
     modelId = readRDS("tmp/modelID.rds"),
-    adj_method = "bonferroni"
+    adj_method = "bonferroni",
+    thresh.p = "0.05"
   )
   
   
@@ -132,7 +133,8 @@ test_that("GET /datatable", {
   path <- paste0(host,"/datatable")
   query <- list(
     modelId = readRDS("tmp/modelID.rds"),
-    adj_method = "bonferroni"
+    adj_method = "bonferroni",
+    thresh.p = "0.05"
   )
   
   
@@ -144,8 +146,14 @@ test_that("GET /datatable", {
   expect_equal(resp$status_code, 200)
   
   # test response content
-  respContent <- content(resp)
-  expect_equal(respContent, data.frame())
+  respContent <- jsonlite::fromJSON(content(resp, type = "text"))
+  
+  if (grepl("Pericarp-color", query$modelId) & query$adj_method == "bonferroni" & query$thresh.p == "0.05" ) {
+    # expect same results than
+    expect_equal(respContent, readRDS("data/Pericarp-color_bonferroni_05_2020-03-25.rds"))
+  } else {
+    warning("can't check values of /datatable")
+  }
 })
 
 
