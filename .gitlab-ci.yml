@@ -21,7 +21,7 @@ buildDockerImg:
 testAPI:
   stage: buildAndTest
   before_script:
-    - sudo apt-get install curl -y
+    - apt-get update && apt-get install curl -y
   image: rocker/verse
   services:
     - utbiomet/gwasapi
