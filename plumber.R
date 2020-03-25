@@ -14,7 +14,7 @@
 library(plumber)
 library(digest)
 library(DT)
-require(gaston) # for many functions
+library(gaston) # for many functions
 
 #* @apiTitle GWAS API
 #* @apiDescription First test for GWAS API
@@ -49,6 +49,7 @@ function(req){
 
 #* Echo back the input
 #* @param msg The message to echo
+#* @serializer unboxedJSON
 #* @get /echo
 function(msg=""){
   list(msg = paste0("The message is: '", msg, "'"))
@@ -69,6 +70,7 @@ function(msg=""){
 #* @param trait The trait to be analyzed
 #* @param trait_type The trait type: quantitative or binary
 #* @param fixed The option chosen for fixed effect (number of PC, or kmeans, or none)
+#* @serializer unboxedJSON
 #* @post /gwas
 function(markerDataId, phenoDataId, test, trait, trait_type, fixed){
   
@@ -171,7 +173,11 @@ function(markerDataId, phenoDataId, test, trait, trait_type, fixed){
                     markerDataId, "_", phenoDataId, "_", trait,"_",
                     as.numeric(creatTime))
   modName <- gsub("\\.", "-", modName)
-  modPath <- paste0("models/", modName, ".Rdata")
+  modPath <- paste0("data/models/", modName, ".Rdata")
+  
+  if (!dir.exists("data/models")) {
+    dir.create("data/models", mode = "0664")
+  }
   save(gwa, file = modPath)
 
   # TODO:
@@ -182,7 +188,7 @@ function(markerDataId, phenoDataId, test, trait, trait_type, fixed){
   # 
   #
   
-  data.frame(
+  list(
     message = "Model created !",
     modelId = modName
   )
@@ -233,7 +239,7 @@ function(markerDataId, phenoDataId, test, fixed, tresh.maf, tresh.callrate){
 function(result, adj_method, thresh.p){
   
   # LOAD MODEL
-  load(paste0("models/", result$modelId, ".Rdata"))
+  load(paste0("data/models/", modelId, ".Rdata"))
   # can also be done in an external function: gwa <- loadModel(modelId) 
   
   
@@ -280,17 +286,16 @@ function(markerDataId, from, to){
 #* @param adj_method either bonferroni or FDR
 #* @param thresh.p
 #* @get /datatable
-#* @serializer htmlwidget
 function(modelId, adj_method, thresh.p){
   
   # LOAD MODEL
-  load(paste0("models/", modelId, ".Rdata"))
+  load(paste0("data/models/", modelId, ".Rdata"))
   # can also be done in an external function: gwa <- loadModel(modelId) 
-  
   
   # CREATE DATATABLE
   p.adj <- p.adjust(gwa$p, method = adj_method)
-  datatable(gwa[p.adj < thresh.p, ])
+  # datatable(gwa[p.adj < thresh.p, ])
+  gwa[p.adj < thresh.p, ]
 }
 
-# sel=gt.score[,colnames(gt.score)%in% gwa[p.adj < 0.05, "id"]]
+# sel=gt.score[,colnames(gt.score)%in% gwa[p.adj < thresh.p, "id"]]
