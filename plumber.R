@@ -27,7 +27,10 @@ sapply(list.files("functions",
                   full.names = TRUE),
        source)
 
-
+# create models folder
+if (!dir.exists("data/models")) {
+  dir.create("data/models", mode = "0664")
+}
 
 
 
@@ -45,7 +48,7 @@ function(req){
 
 
 
-######################################################################
+################################### Endpoints ##################################
 
 #* Echo back the input
 #* @param msg The message to echo
@@ -61,149 +64,24 @@ function(msg=""){
 
 
 ##### GWAS #####
- 
-#* Fit a GWAS model
-#* @tag Model fitting GWAS
-#* @param markerDataId id of the genetic data
-#* @param phenoDataId id of the phenotypic data
-#* @param test The testing method (lrt, Wald or score)
-#* @param trait The trait to be analyzed
-#* @param trait_type The trait type: quantitative or binary
-#* @param fixed The option chosen for fixed effect (number of PC, or kmeans, or none)
-#* @serializer unboxedJSON
-#* @post /gwas
-function(markerDataId, phenoDataId, test, trait, trait_type, fixed){
-  
-  ### CHECK PARAMETERS 
-  if (!is.na(as.numeric(fixed))) {
-    fixed <- as.numeric(fixed)
-  }
-  
-  ### GET DATA
-  bm.wom <- loadData(markerDataId, phenoDataId, trait)
-  
-  ### CLEAN DATA
-  # keep marker with a large enough MAF (>0.05) and low missing rate (callrate>0.9)
-  bm.wom <- select.snps(bm.wom, maf > 0.05)
-  bm.wom <- select.snps(bm.wom, callrate > 0.9)
-  
-  
-  ### ????
-  # Compute K (=Genetic relationship matrix for the lines with observed/non missing trait)
-  K <- GRM(bm.wom)
-  
-  ### FIT MODEL
-  if (is.numeric(fixed)) {
-    if (test != "score") {
-      gwa <- association.test(
-        bm.wom,
-        method = "lmm",
-        response = trait_type,
-        test = test,
-        eigenK = eigen(K),
-        p = fixed)
-    } else {
-      gwa <- association.test(
-        bm.wom,
-        method = "lmm",
-        response = trait_type,
-        test = "score",
-        K = K,
-        eigenK = eigen(K),
-        p = fixed
-      )
-    }
-  } else if (fixed == "kmeans") {
-    
-    # extract the score matrix 
-    gt.score <- as.matrix(bm.wom)
-    
-    # k-means clustering
-    tmp <- na.omit(t(gt.score))
-    km <- kmeans(t(tmp), centers = 5, nstart = 10, iter.max = 100)
-    grp <- as.factor(km$cluster)
-    
-    # Compute fixed effects from k-means clustering
-    Xkm <- model.matrix(~grp[bm.wom@ped$id])
-    
-    if (test != "score") {
-      gwa <- association.test(
-        bm.wom,
-        method = "lmm",
-        response = trait_type,
-        test = test,
-        X = Xkm,
-        eigenK = eigen(K)
-      )
-    } else{
-      gwa <- association.test(
-        bm.wom,
-        method = "lmm",
-        response = trait_type,
-        test = "score",
-        K = K,
-        X = Xkm,
-        eigenK = eigen(K)
-      )
-    }
-  } else if (is.null(fixed)) {
-    if (test != "score") {
-      gwa <- association.test(
-        bm.wom,
-        method = "lmm",
-        response = trait_type,
-        test = test,
-        eigenK = eigen(K)
-      )
-    } else{
-      gwa <- association.test(
-        bm.wom,
-        method = "lmm",
-        response = trait_type,
-        test = "score",
-        K = K,
-        eigenK = eigen(K)
-      )
-    }
-  }
-  
-  # SAVE MODEL
-  creatTime <- Sys.time()
-  modName <- paste0("GWAS_",
-                    markerDataId, "_", phenoDataId, "_", trait,"_",
-                    as.numeric(creatTime))
-  modName <- gsub("\\.", "-", modName)
-  modPath <- paste0("data/models/", modName, ".Rdata")
-  
-  if (!dir.exists("data/models")) {
-    dir.create("data/models", mode = "0664")
-  }
-  save(gwa, file = modPath)
-
-  # TODO:
-  # write models's information in a database
-  # so that endpoints to check already fitted model can be created
-  #
-  # fp <- digest(file = modPath) # model's file finger print (hash)
-  # 
-  #
-  
-  list(
-    message = "Model created !",
-    modelId = modName
-  )
-}
-
 #* Fit a GWAS model (type 2)
 #* @tag Model fitting GWAS
 #* @param markerDataId id of the genetic data
 #* @param phenoDataId id of the phenotypic data
+#* @param trait The trait to be analyzed
 #* @param test The testing method (lrt, Wald or score)
 #* @param fixed The option chosen for fixed effect (number of PC, or none (0)) 
-#* @param maf
-#* @param callrate
-#* @post /gwas2
-function(markerDataId, phenoDataId, test, fixed, tresh.maf, tresh.callrate){
+#* @param tresh.maf keep markers with a MAF > tresh.maf
+#* @param tresh.callrate keep markers with a callrate > tresh.callrate
+#* @serializer unboxedJSON
+#* @post /gwas
+function(markerDataId,
+         phenoDataId,
+         trait,
+         test,
+         fixed,
+         tresh.maf = 0.05,
+         tresh.callrate = 0.9){
   
   ### CHECK PARAMETERS
   if (!is.na(as.numeric(fixed))) {
@@ -215,15 +93,30 @@ function(markerDataId, phenoDataId, test, fixed, tresh.maf, tresh.callrate){
   ### GET DATA
   data <- loadData2(markerDataId, phenoDataId)
   
-  ### GWAS for each trait one by one
-  res <- vector("list", ncol(data$phenoData))
-  for(i in 1:ncol(data$phenoData)) {
-  	trait <- colnames(data$phenoData)[i]
-  	print(trait)
-  	res[[i]] <- gwas(data, trait, test, fixed, tresh.maf, tresh.callrate)
-  }
+  ### GWAS 
+  # calc model
+  creatTime <- Sys.time()
+  model <- gwas(data, trait, test, fixed, tresh.maf, tresh.callrate)
+  modelId <- gsub("\\.", "-",
+                  paste0("GWAS_",
+                         markerDataId, "_", phenoDataId, "_", trait,"_",
+                         as.numeric(creatTime)))
   
-  return res
+  # save model
+  modPath <- paste0("data/models/", modelId, ".rds")
+  saveRDS(model, file = modPath)
+
+  # TODO:
+  # write models's information in a database
+  # so that endpoints to check already fitted model can be created
+  #
+  # fp <- digest(file = modPath) # model's file finger print (hash)
+  # 
+  #
+  list(
+    message = "Model created",
+    modelId = modelId
+  )
 }
 
 
@@ -236,19 +129,20 @@ function(markerDataId, phenoDataId, test, fixed, tresh.maf, tresh.callrate){
 #* @param thresh.p
 #* @png
 #* @get /manplot
-function(result, adj_method, thresh.p){
+function(modelId, adj_method, thresh.p){
   
   # LOAD MODEL
-  load(paste0("data/models/", modelId, ".Rdata"))
+  gwa <- readRDS(paste0("data/models/", modelId, ".rds"))
   # can also be done in an external function: gwa <- loadModel(modelId) 
-  
-  
+
   # CREATE PLOT
   p.adj <- p.adjust(gwa$p, method = adj_method)
   col <- rep("black", nrow(gwa))
   col[gwa$chr %% 2 == 0] <- "gray50"
   col[p.adj < thresh.p] <- "green"
-  manhattan(gwa, pch = 20, col = col, main = result$trait, sub = paste0(result$modelId))
+  manhattan(gwa, pch = 20, col = col,
+            main = "TO DO trait name", # extract trait name from database
+            sub = modelId)
 }
 
 
@@ -285,12 +179,13 @@ function(markerDataId, from, to){
 #* @param modelId GWAS model id
 #* @param adj_method either bonferroni or FDR
 #* @param thresh.p
+#* @serializer unboxedJSON
 #* @get /datatable
 function(modelId, adj_method, thresh.p){
   
   # LOAD MODEL
-  load(paste0("data/models/", modelId, ".Rdata"))
-  # can also be done in an external function: gwa <- loadModel(modelId) 
+  gwa <- readRDS(paste0("data/models/", modelId, ".rds"))
+  # can also be done in an external function: gwa <- loadModel(modelId)  
   
   # CREATE DATATABLE
   p.adj <- p.adjust(gwa$p, method = adj_method)
