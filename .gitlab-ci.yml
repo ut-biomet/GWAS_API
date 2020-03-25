@@ -29,12 +29,12 @@ stage1job2:
     - mkdir stage1job2
     - ls -la
     # - docker build -t utbiomet/gwasapi:gitlab ./
-# stage2job1:
-#   stage: test
-#   script:
-#     - ls -la
-#     - mkdir testTest
 
+stage2job1:
+  stage: test
+  script:
+    - ls -la
+    - mkdir testTest
 # stage2job2:
 #   stage: test
 #   script:
