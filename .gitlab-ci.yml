@@ -14,33 +14,31 @@ stage1job1:
   stage: build
   script:
     - pwd
-    - ls -la /
-    - ls -la /
-    - ls -la
     - mkdir stage1job1
     - ls -la
-    # - docker build -t utbiomet/gwasapi:gitlab ./
+    - docker build -t utbiomet/gwasapi:gitlab ./
 
 stage1job2:
   stage: build
   script:
     - pwd
-    - ls -la
     - mkdir stage1job2
     - ls -la
-    # - docker build -t utbiomet/gwasapi:gitlab ./
+    - docker build -t utbiomet/gwasapi:gitlab ./
 
 stage2job1:
   stage: test
   script:
     - ls -la
     - mkdir testTest
-# stage2job2:
-#   stage: test
-#   script:
-#     - ls -la
-#     - mkdir testTest
+    - docker run -d --rm --name gwasapi -p 8080:8080 utbiomet/gwasapi:gitlab
 
+stage2job2:
+  stage: test
+  script:
+    - ls -la
+    - mkdir testTest
+    - docker run -d --rm --name gwasapi -p 8080:8080 utbiomet/gwasapi:gitlab
 # deploy:
 #   stage: deploy
 #   script:
