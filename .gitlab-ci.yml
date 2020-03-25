@@ -10,21 +10,38 @@ before_script:
   # - apt-get update
   # - r -e 'install.packages(c("testthat"))'
 
-buildDockerImage:
+stage1job1:
+  stage: build
+  script:
+    - pwd
+    - ls -la /
+    - ls -la /
+    - ls -la
+    - mkdir stage1job1
+    - ls -la
+    # - docker build -t utbiomet/gwasapi:gitlab ./
+
+stage1job2:
   stage: build
   script:
     - pwd
     - ls -la
-    - mkdir testBuild
-    # - docker --version
-
-unittest:
-  stage: test
-  script:
+    - mkdir stage1job2
     - ls -la
-    - mkdir testTest
+    # - docker build -t utbiomet/gwasapi:gitlab ./
+# stage2job1:
+#   stage: test
+#   script:
+#     - ls -la
+#     - mkdir testTest
 
-deploy:
-  stage: test
-  script:
-    - ls -la
+# stage2job2:
+#   stage: test
+#   script:
+#     - ls -la
+#     - mkdir testTest
+
+# deploy:
+#   stage: deploy
+#   script:
+#     - ls -la
