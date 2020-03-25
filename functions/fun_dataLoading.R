@@ -103,7 +103,7 @@ loadData2 <- function(markerDataId, phenoDataId){
 #' @param maf (0 < maf < 0.5)
 #' @param callrate (0 < callrate <= 1)
 #' 
-gwas <- function(data, trait, test, fixed, tresh.maf, tresh.callrate) {
+gwas <- function(data, trait, test, fixed, thresh.maf, thresh.callrate) {
 	
 	### GET DATA
 	bm <- data$markerData
@@ -141,27 +141,7 @@ gwas <- function(data, trait, test, fixed, tresh.maf, tresh.callrate) {
         	p = fixed)
     }
   
-	# SAVE MODEL
-  	creatTime <- Sys.time()
-  	modelId <- paste0("GWAS_",
-                    markerDataId, "_", phenoDataId, "_", trait,"_",
-                    as.numeric(creatTime))
-  	modelId <- gsub("\\.", "-", modelId)
-  	modPath <- paste0("models/", modelId, ".Rdata")
-  	save(gwa, file = modPath)
+	
+	return(gwa)
 
-  	# TODO:
-  	# write models's information in a database
-  	# so that endpoints to check already fitted model can be created
-  	#
-  	# fp <- digest(file = modPath) # model's file finger print (hash)
-  	# 
-  	#
-  	data.frame(
-    	message = "Model created!",
-    	markerDataId,
-    	phenoDataId,
-    	trait,
-    	modelId
-  	)
 }
