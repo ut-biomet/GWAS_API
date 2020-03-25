@@ -1,9 +1,7 @@
 image: rocker/verse
 
 stages:
-  - build
-  - test
-  - deploy
+  - buildAndTest
 
 before_script:
   - echo "hello"
@@ -11,7 +9,7 @@ before_script:
   # - r -e 'install.packages(c("testthat"))'
 
 buildDockerImg:
-  stage: build
+  stage: buildAndTest
   image: docker:latest
   services:
     - docker:dind
@@ -21,19 +19,7 @@ buildDockerImg:
     - docker build -t utbiomet/gwasapi:gitlab ./
 
 testAPI:
-  stage: test
-  image: trestletech/plumber
+  stage: buildAndTest
+  image: rocker/verse
   script:
     - R -e "5+5"
-  # script:
-  #   - SNAPSHOT="https://cran.microsoft.com/snapshot/2020-03-17/" && if [ $(curl -s -o /dev/null -w "%{http_code}" $SNAPSHOT) = "200" ] ; then echo "OK: R pkg repository server accessible." ; else echo "ERROR: R pkg repository server not accessible. status = $(curl -s -o /dev/null -w "%{http_code}" $SNAPSHOT)" ; fi && touch /.Rprofile && echo "options(repos = c(CRAN = '$SNAPSHOT'))" >> ~/.Rprofile
-  #   - R -e "install.packages(c('BGLR', 'digest', 'DT', 'gaston', 'httr', 'testthat'))"
-  #   - rm ~/.Rprofile
-  #   - R -e "api <- plumber::plumb('/plumber.R'); api\$run(port = 8080, host = '0.0.0.0', swagger = TRUE)"
-  #   - Rscript tests/testthat.R
-# stage2job1:
-#   stage: test
-#   script:
-#     - ls -la
-#     - mkdir testTest
-#     - docker run -d --rm --name gwasapi -p 8080:8080 utbiomet/gwasapi:gitlab
