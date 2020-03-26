@@ -16,4 +16,4 @@ testthat::expect_error(GET(host), NA)
 
 
 # run tests
-test_dir("tests/testthat")
+test_dir("tests/testthat", stop_on_failure = TRUE, stop_on_warning = TRUE)
