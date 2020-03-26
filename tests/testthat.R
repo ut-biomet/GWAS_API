@@ -8,7 +8,7 @@ library(testthat)
 
 ip <- "127.0.0.1"
 # ip <- "52.193.46.252" # SIP AWS server
-port <- 8080
+port <- 8181
 host <- paste0("http://", ip, ":", port)
 
 # Check if the API is available
