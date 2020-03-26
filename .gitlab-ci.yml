@@ -10,7 +10,7 @@ before_script:
 
 buildDockerImg:
   stage: buildAndTest
-  image: docker:latest
+  image: rocker/verse
   services:
     - docker:dind
   script:
@@ -19,7 +19,7 @@ buildDockerImg:
     # - docker build -t utbiomet/gwasapi:gitlab ./
     - docker run -d --rm --name gwasapi -p 8080:8080 utbiomet/gwasapi
     - sudo apt-get update && apt-get install curl -y
-    # - 'curl -X GET "http://localhost:8080/echo?msg=it%20is%20working%20!%20" -H  "accept\: application/json"'
+    - 'curl -X GET "http://localhost:8080/echo?msg=it%20is%20working%20!%20" -H  "accept\: application/json"'
     - docker ps
 # testAPI:
 #   stage: buildAndTest
@@ -40,5 +40,5 @@ testAPI:
   image: rocker/verse
   script:
     - R -e "5+5"
-    - nohup R -e "plumber::plumb('plumber.R')\$run(port = 8080)"
+    - nohup R -e "plumber::plumb('plumber.R')\$run(port = 8080)" &
     - Rscript tests/testthat.R
