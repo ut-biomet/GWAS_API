@@ -36,8 +36,8 @@ buildDockerImg:
 testAPI:
   stage: buildAndTest
   before_script:
-    - R -e "install.packages(c('BGLR', 'digest', 'DT', 'gaston', 'httr', 'testthat'))"
-  image: trestletech/plumber
+    - R -e "install.packages(c('BGLR', 'digest', 'DT', 'gaston', 'httr', 'jsonlite', 'pcaMethods', 'plumber', 'testthat'))"
+  image: rocker/verse
   script:
     - R -e "5+5"
     - nohup R -e "plumber::plumb('plumber.R')\$run(port = 8080)"
