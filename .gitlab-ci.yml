@@ -36,7 +36,7 @@ buildDockerImg:
 testAPI:
   stage: buildAndTest
   before_script:
-    - R -e "install.packages(c('BGLR', 'digest', 'DT', 'gaston', 'httr', 'jsonlite', 'pcaMethods', 'plumber', 'testthat'))"
+    - R -e "install.packages(c('BGLR', 'digest', 'DT', 'gaston', 'httr', 'jsonlite', 'pcaMethods', 'plumber', 'testthat'), quiet = TRUE)"
   image: rocker/verse
   script:
     - R -e "5+5"
