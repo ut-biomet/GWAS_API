@@ -75,7 +75,8 @@ function(msg=""){
 #* @param tresh.callrate keep markers with a callrate > tresh.callrate
 #* @serializer unboxedJSON
 #* @post /gwas
-function(markerDataId,
+function(res,
+         markerDataId,
          phenoDataId,
          trait,
          test,
@@ -111,12 +112,13 @@ function(markerDataId,
   # so that endpoints to check already fitted model can be created
   #
   # fp <- digest(file = modPath) # model's file finger print (hash)
-  # 
-  #
+
+  res$status <- 201 # status for good post response
   list(
     message = "Model created",
     modelId = modelId
   )
+  
 }
 
 
