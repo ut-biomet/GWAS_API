@@ -184,13 +184,28 @@ function(res,
 
   # TODO:
   # see : https://docs.google.com/document/d/1gaTazFm_a6klD9krZPKGHc5x_D-SWL8K93M6dwsTiLE/edit
-  # cat some information ID of the model,
   # write models's information in a database
   # so that endpoints to check already fitted model can be created
-  #
-  # Send all the information back so that, listenfield can write these in their database
-  #
-  # fp <- digest(file = modPath) # model's file finger print (hash)
+
+  # save model information
+  cat(as.character(Sys.time()), "-",
+      "/gwas: Save model information ... \n")
+  out$modelInfo <- list(
+    modelId = modelId,
+    locationPath = modPath,
+    creationTime = callTime,
+    markerDataId = markerDataId,
+    phenoDataId = phenoDataId,
+    trait = trait,
+    test = test,
+    fixed = as.character(fixed),
+    tresh.maf = as.character(tresh.maf),
+    tresh.callrate = as.character(tresh.callrate),
+    modelRobjectMD5 = digest(model),
+    modelFileMD5 = digest(file = modPath)
+  )
+  cat(as.character(Sys.time()), "-",
+      "/gwas: Save model information DONE \n")
 
 
 
