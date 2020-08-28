@@ -33,6 +33,7 @@ docker exec -u 0 -it gwasapi bash
 To test the API, frist launch a local instance of the API on port `8181`. This can be done through several ways, for example in R run:
 
 ```R
+library(plumber)
 plumber::plumb('plumber.R')$run(port = 8181)
 ```
 
