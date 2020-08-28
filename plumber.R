@@ -117,6 +117,7 @@ function(res,
 
   ### CHECK PARAMETERS
   # Convert to numeric
+  options(warn = -1) # disable warnings. for "as.numeric" with character
   cat(as.character(Sys.time()), "-",
       "/gwas: Convert numeric parameters...\n")
   if (!is.na(as.numeric(fixed))) {
@@ -126,6 +127,10 @@ function(res,
         '/gwas: Error: "fixed" cannot be converted to numeric.\n')
     res$status <- 400 # bad request
     out$error <- '"fixed" should be a numeric value.'
+    cat(as.character(Sys.time()), "-",
+        '/gwas: Exit with error code 400\n')
+    cat(as.character(Sys.time()), "-",
+        "/gwas: END \n")
     return(out)
   }
 
@@ -136,6 +141,10 @@ function(res,
         '/gwas: Error: "tresh.maf" cannot be converted to numeric.\n')
     res$status <- 400 # bad request
     out$error <- '"tresh.maf" should be a numeric value.'
+    cat(as.character(Sys.time()), "-",
+        '/gwas: Exit with error code 400\n')
+    cat(as.character(Sys.time()), "-",
+        "/gwas: END \n")
     return(out)
   }
 
@@ -146,17 +155,21 @@ function(res,
         '/gwas: Error: "tresh.callrate" cannot be converted to numeric.\n')
     res$status <- 400 # bad request
     out$error <- '"tresh.callrate" should be a numeric value.'
+    cat(as.character(Sys.time()), "-",
+        '/gwas: Exit with error code 400\n')
+    cat(as.character(Sys.time()), "-",
+        "/gwas: END \n")
     return(out)
   }
   cat(as.character(Sys.time()), "-",
       "/gwas: Convert numeric parameters DONE.\n")
-
+  options(warn = 0) # enable warnings
 
 
   ### GET DATA
   cat(as.character(Sys.time()), "-",
       "/gwas: Load data...\n")
-  data <- loadData2(markerDataId, phenoDataId)
+  data <- loadData(markerDataId, phenoDataId)
   cat(as.character(Sys.time()), "-",
       "/gwas: Load data DONE.\n")
 
@@ -264,6 +277,10 @@ function(res, modelId, adj_method, thresh.p = 0.05){
         '/manplot: Error: "thresh.p" cannot be converted to numeric.\n')
     res$status <- 400 # bad request
     out$error <- '"thresh.p" should be a numeric value.'
+    cat(as.character(Sys.time()), "-",
+        '/manplot: Exit with error code 400\n')
+    cat(as.character(Sys.time()), "-",
+        "/manplot: END \n")
     return(out)
   }
   cat(as.character(Sys.time()), "-",
@@ -342,6 +359,10 @@ function(res, markerDataId, from, to){
         '/LDplot: Error: "from" cannot be converted to numeric.\n')
     res$status <- 400 # bad request
     out$error <- '"from" should be a numeric value.'
+    cat(as.character(Sys.time()), "-",
+        '/LDplot: Exit with error code 400\n')
+    cat(as.character(Sys.time()), "-",
+        "/LDplot: END \n")
     return(out)
   }
 
@@ -354,6 +375,10 @@ function(res, markerDataId, from, to){
         '/LDplot: Error: "to" cannot be converted to numeric.\n')
     res$status <- 400 # bad request
     out$error <- '"to" should be a numeric value.'
+    cat(as.character(Sys.time()), "-",
+        '/LDplot: Exit with error code 400\n')
+    cat(as.character(Sys.time()), "-",
+        "/LDplot: END \n")
     return(out)
   }
   cat(as.character(Sys.time()), "-",
@@ -367,6 +392,10 @@ function(res, markerDataId, from, to){
         '/LDplot: Error: "from" greater than "to".\n')
     res$status <- 400 # bad request
     out$error <- '"from" should be inferior than "to".'
+    cat(as.character(Sys.time()), "-",
+        '/LDplot: Exit with error code 400\n')
+    cat(as.character(Sys.time()), "-",
+        "/LDplot: END \n")
     return(out)
   }
   cat(as.character(Sys.time()), "-",
@@ -380,6 +409,10 @@ function(res, markerDataId, from, to){
         '/LDplot: Error: number of SNP is > 50.\n')
     res$status <- 400 # bad request
     out$error <- 'number of SNP should be < 50'
+    cat(as.character(Sys.time()), "-",
+        '/LDplot: Exit with error code 400\n')
+    cat(as.character(Sys.time()), "-",
+        "/LDplot: END \n")
     return(out)
   }
   cat(as.character(Sys.time()), "-",

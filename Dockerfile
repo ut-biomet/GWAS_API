@@ -6,6 +6,7 @@ EXPOSE 8080
 RUN useradd plumber
 
 RUN apt-get update --allow-releaseinfo-change && apt-get install -y \
+    gcc-8-base \
     libcurl4 \
     libcurl4-openssl-dev \
     libxml2-dev \

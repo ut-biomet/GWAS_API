@@ -7,5 +7,4 @@ testAPI:
   before_script:
     - R -e "install.packages(c('BGLR', 'digest', 'DT', 'gaston', 'httr', 'jsonlite', 'pcaMethods', 'plumber', 'testthat'), quiet = TRUE)"
   script:
-    - nohup R -e "plumber::plumb('plumber.R')\$run(port = 8181)" &
-    - Rscript tests/testthat.R
+    - nohup R -e "plumber::plumb('plumber.R')\$run(port = 8181)" & Rscript tests/testthat.R

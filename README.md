@@ -15,10 +15,14 @@ docker build -t utbiomet/gwasapi ./
 ### Deploy
 
 ```sh
-docker run -d --rm --name gwasapi -p 8080:8080 utbiomet/gwasapi
+docker push utbiomet/gwasapi:latest
 ```
 
 ### Debug
+
+```sh
+docker run -d --rm --name gwasapi -p 8080:8080 utbiomet/gwasapi
+```
 
 ```sh
 docker exec -u 0 -it gwasapi bash
@@ -29,6 +33,7 @@ docker exec -u 0 -it gwasapi bash
 To test the API, frist launch a local instance of the API on port `8181`. This can be done through several ways, for example in R run:
 
 ```R
+library(plumber)
 plumber::plumb('plumber.R')$run(port = 8181)
 ```
 
