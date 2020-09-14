@@ -29,8 +29,14 @@ sapply(list.files("functions",
        source)
 
 # create models folder
+cat(as.character(Sys.time()), "-",
+    "API initialization: check 'data/models' folder\n")
 if (!dir.exists("data/models")) {
-  dir.create("data/models", mode = "0664")
+  perm = "0774"
+  cat(as.character(Sys.time()), "-",
+      "API initialization: 'data/models' not found, create it with permissions", perm, "\n")
+
+  dir.create("data/models", mode = perm)
 }
 
 
