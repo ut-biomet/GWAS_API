@@ -99,3 +99,54 @@ loadData <- function(markerDataId, phenoDataId){
 
   list(markerData = mDta, phenoData = pDta, grMatrix = grm)
 }
+
+
+
+
+#' get list of GWAS models
+#'
+#'
+#' @return
+getModelList <- function(modelId = NULL,
+                         locationPath = NULL,
+                         creationTime = NULL,
+                         markerDataId = NULL,
+                         phenoDataId = NULL,
+                         trait = NULL,
+                         test = NULL,
+                         fixed = NULL,
+                         tresh.maf = NULL,
+                         tresh.callrate = NULL,
+                         modelRobjectMD5 = NULL,
+                         modelFileMD5 = NULL){
+
+  # TODO
+  # this function must be adapted in the future to get the information from listenfield's database.
+
+  cat(as.character(Sys.time()), "-",
+      " getModelList(): get list of all models\n")
+  modelsFiles <- list.files("data/models/")
+
+  models <- as.data.frame(t(sapply(modelsFiles, function(f){
+    info <- strsplit(f, split = "_")[[1]]
+    time <- as.numeric(strsplit(info[5], split = "-")[[1]][1])
+    out <- list(
+      modelId = strsplit(f, split = "\\.")[[1]][1],
+      locationPath = paste0("data/models/", f),
+      creationTime = as.POSIXct(time, origin = "1970-01-01", tz = ""),
+      markerDataId = info[2],
+      phenoDataId = info[3],
+      trait = info[4],
+      test = NA,
+      fixed = NA,
+      tresh.maf = NA,
+      tresh.callrate = NA,
+      modelRobjectMD5 = NA,
+      modelFileMD5 = paste0("data/models/", f)
+    )
+  })))
+
+  row.names(models) <- NULL
+
+  models
+}
