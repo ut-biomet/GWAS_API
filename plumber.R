@@ -27,7 +27,7 @@ library(plumber)
 library(digest) # for MD5 sum calculation
 library(DT)
 library(gaston) # for many functions
-library(git2r) # for api version check
+stopifnot("git2r" %in% rownames(installed.packages()))
 
 # load API's functions
 sapply(list.files("functions",
@@ -63,6 +63,8 @@ function(req){
 
 
 ################################### Endpoints ##################################
+
+##### Utils #####
 
 #* Echo back the input
 #* @tag utils
