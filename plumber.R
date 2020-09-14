@@ -10,17 +10,24 @@
 #    https://www.rplumber.io/
 #
 
+
+##### API description #####
+#* @apiTitle GWAS API
+#* @apiDescription API for GWAS models fitting and use
+#* @apiVersion 0.0.1
+#* @apiContact @email juliendiot@ut-biomet.org
+#* @apiTag Utils Endpoints for checking the API
+#* @apiTag Models Endpoints related to model managements
+#* @apiTag Plots Endpoints related to plots drawn from a GWAS model
+#* @apiTag Data Endpoints related to model data
+
+
 # required packages
 library(plumber)
-library(digest)
+library(digest) # for MD5 sum calculation
 library(DT)
 library(gaston) # for many functions
-
-#* @apiTitle GWAS API
-#* @apiDescription First test for GWAS API
-
-# api <- plumber::plumb('plumber.R')
-# api$run(port = 8080, host = '0.0.0.0', swagger = TRUE)
+library(git2r) # for api version check
 
 # load API's functions
 sapply(list.files("functions",
@@ -58,6 +65,7 @@ function(req){
 ################################### Endpoints ##################################
 
 #* Echo back the input
+#* @tag utils
 #* @param msg The message to echo
 #* @serializer unboxedJSON
 #* @get /echo
@@ -75,7 +83,7 @@ function(msg=""){
 
 ##### GWAS #####
 #* Fit a GWAS model (type 2)
-#* @tag Model fitting GWAS
+#* @tag Models
 #* @param markerDataId id of the genetic data
 #* @param phenoDataId id of the phenotypic data
 #* @param trait The trait to be analyzed
@@ -245,7 +253,7 @@ function(res,
 ##### Plots #####
 
 #* Manhattan plot (type 2)
-#* @tag ManhattanPlot
+#* @tag Plots
 #* @param modelId GWAS model id
 #* @param adj_method either bonferroni or FDR
 #* @param thresh.p
@@ -330,7 +338,7 @@ function(res, modelId, adj_method, thresh.p = 0.05){
 
 
 #* LD plot
-#* @tag LDPlot
+#* @tag Plots
 #* @param markerDataId
 #* @param from (total number of SNP should be < 50)
 #* @param to (total number of SNP should be < 50)
@@ -458,7 +466,7 @@ function(res, markerDataId, from, to){
 ##### Tables output #####
 
 #* Table of selected SNPs
-#* @tag SNP Table
+#* @tag Data
 #* @param modelId GWAS model id
 #* @param adj_method either bonferroni or FDR
 #* @param thresh.p
@@ -530,3 +538,6 @@ function(res, modelId, adj_method, thresh.p = 0.05){
 }
 
 # sel=gt.score[,colnames(gt.score)%in% gwa[p.adj < thresh.p, "id"]]
+
+
+
