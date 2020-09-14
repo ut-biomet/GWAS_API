@@ -77,7 +77,34 @@ function(msg=""){
 }
 
 
+#* give information about current API version
+#* @tag utils
+#* @serializer unboxedJSON
+#* @get /version
+function(){
+  cat(as.character(Sys.time()), "-",
+      "/version: call\n")
+  out <- list()
 
+  if (dir.exists(".git")) {
+    cat(as.character(Sys.time()), "-",
+        "/version: extract last commit informations\n")
+    out$lastCommit <- as.data.frame(git2r::last_commit(), "data.frame")
+  } else {
+    cat(as.character(Sys.time()), "-",
+        "/version: git repository not found\n")
+    out$lastCommit <- NA
+  }
+
+  cat(as.character(Sys.time()), "-",
+      "/version: calculate MD5 sum of all the '.R' files\n")
+  apiRfiles <- dir(all.files = T, pattern = ".R$", recursive = T)
+  allFP <- sapply(apiRfiles, function(f){digest(file = f)})
+  out$RfilesFingerPrint <- digest(allFP)
+  cat(as.character(Sys.time()), "-",
+      "/version: END \n")
+  return(out)
+}
 
 
 
