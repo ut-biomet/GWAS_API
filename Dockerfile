@@ -38,4 +38,4 @@ RUN chmod -R 774 /GWAS_API
 USER plumber
 
 ENTRYPOINT []
-CMD R -e "setwd('/GWAS_API'); api <- plumber::plumb('/GWAS_API/plumber.R'); api\$run(port = 8080, host = '0.0.0.0', swagger = TRUE)"
+CMD R -e "setwd('/GWAS_API'); api <- plumber::plumb('/GWAS_API/plumber.R'); api\$run(port = 8080, host = '0.0.0.0')"

@@ -21,6 +21,8 @@
 #* @apiTag Plots Endpoints related to plots drawn from a GWAS model
 #* @apiTag Data Endpoints related to model data
 
+cat(as.character(Sys.time()), "-",
+    "Start Plumber API using 'plumber v'", as.character(packageVersion("plumber")), "\n")
 
 # required packages
 library(plumber)
@@ -313,7 +315,7 @@ function(res,
 #* @param modelS3Path url of the model data file (rds file)
 #* @param adj_method either bonferroni or FDR
 #* @param thresh.p
-#* @png
+#* @serializer png
 #* @get /manplot
 function(res, modelS3Path, adj_method, thresh.p = 0.05){
   # # save call time.
@@ -397,7 +399,7 @@ function(res, modelS3Path, adj_method, thresh.p = 0.05){
 #* @param markerS3Path url of the markers data file (.vcf.gz file)
 #* @param from (total number of SNP should be < 50)
 #* @param to (total number of SNP should be < 50)
-#* @png
+#* @serializer png
 #* @get /LDplot
 function(res, markerS3Path, from, to){
 
