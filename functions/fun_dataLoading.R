@@ -63,12 +63,12 @@ loadData <- function(markerDataId, phenoDataId){
       " r-loadData(): get pheno data DONE\n")
 
 
-  # select individuals with traits
+  # Remove from marker data individuals that are not in phenotypic data-set
   cat(as.character(Sys.time()), "-",
-      " r-loadData(): extract individuals having phenotype for the corresponding trait ...\n")
+      " r-loadData(): Remove from marker data individuals that are not in phenotypic data-set ...\n")
   mDta <- select.inds(mDta, id %in% rownames(pDta))
   cat(as.character(Sys.time()), "-",
-      " r-loadData(): extract individuals having phenotype for the corresponding trait DONE\n")
+      " r-loadData(): Remove from marker data individuals that are not in phenotypic data-set DONE\n")
 
 
   # reorder phenotypic data with id in bed matrix
