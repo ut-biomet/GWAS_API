@@ -592,10 +592,10 @@ function(res, markerDataId, from, to){
 #* @tag Data
 #* @param modelId GWAS model id
 #* @param adj_method either bonferroni or FDR
-#* @param thresh.p
+#* @param thresh.p threshold for p values. If not specify return all values
 #* @serializer unboxedJSON
 #* @get /datatable
-function(res, modelId, adj_method, thresh.p = 0.05){
+function(res, modelId, adj_method, thresh.p = NA){
 
   out <- list(
     inputParams = list(
@@ -618,7 +618,7 @@ function(res, modelId, adj_method, thresh.p = 0.05){
   # Convert to numeric
   cat(as.character(Sys.time()), "-",
       "/datatable: Convert numeric parameters...\n")
-  if (!is.na(as.numeric(thresh.p))) {
+  if (!is.na(as.numeric(thresh.p)) | is.na(thresh.p)) {
     thresh.p <- as.numeric(thresh.p)
   } else {
     cat(as.character(Sys.time()), "-",
@@ -650,7 +650,12 @@ function(res, modelId, adj_method, thresh.p = 0.05){
   cat(as.character(Sys.time()), "-",
       "/datatable: Create response ... \n")
   res$status <- 200 # status for good GET response
-  out$data <- gwa[p.adj < thresh.p, ]
+  if (is.na(thresh.p)) {
+    out$data <- gwa
+  } else {
+    out$data <- gwa[p.adj < thresh.p, ]
+  }
+
   # datatable(gwa[p.adj < thresh.p, ])
   cat(as.character(Sys.time()), "-",
       "/datatable: Create response DONE \n")

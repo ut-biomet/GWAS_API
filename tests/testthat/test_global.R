@@ -218,7 +218,6 @@ test_that("GET /datatable", {
     thresh.p = "0.05"
   )
 
-
   # send request
   resp <- GET(path,
               query = query)
@@ -237,6 +236,21 @@ test_that("GET /datatable", {
                     thresh.p = "0.05"))
 
   warning("can't check values of /datatable")
+
+
+  # creat path and request
+  path <- paste0(host,"/datatable")
+  query <- list(
+    modelId = readRDS("tmp/modelID.rds"),
+    adj_method = "bonferroni"
+  )
+
+  # send request
+  resp <- GET(path,
+              query = query)
+
+  # test status
+  expect_equal(resp$status_code, 200)
 
 })
 
