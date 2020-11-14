@@ -7,15 +7,24 @@
 
 #' get markers data
 #'
-#' @param dataId
+#' @param dtaS3Path url of the markers data file (.vcf.gz file)
 #'
 #' @return bed.matrix
-getMarkerData <- function(dataId) {
+getMarkerData <- function(dtaS3Path) {
   cat(as.character(Sys.time()), "-",
-      " r-getMarkerData(): Read data file ... \n")
-  dta <- read.vcf(paste0("data/markers/", dataId, ".vcf.gz"), verbose = FALSE)
+      " r-getMarkerData(): Create local temp file ... \n")
+  localFile <- tempfile(pattern = "markers",
+                        tmpdir = tempdir(),
+                        fileext = ".vcf.gz")
   cat(as.character(Sys.time()), "-",
-      " r-getMarkerData(): Read data file DONE \n")
+      " r-getMarkerData(): Download markers file ... \n")
+  download.file(dtaS3Path, localFile)
+
+  cat(as.character(Sys.time()), "-",
+      " r-getMarkerData(): Read markers file ... \n")
+  dta <- read.vcf(localFile, verbose = FALSE)
+  cat(as.character(Sys.time()), "-",
+      " r-getMarkerData(): Read markers file DONE \n")
   cat(as.character(Sys.time()), "-",
       " r-getMarkerData(): DONE, return output.\n")
   dta
@@ -23,16 +32,25 @@ getMarkerData <- function(dataId) {
 
 #' get phenotypic data
 #'
-#' @param dataId
+#' @param dtaS3Path url of the phenotypic data file (csv file)
 #'
 #' @return data.frame
-getPhenoData <- function(dataId){
+getPhenoData <- function(dtaS3Path){
   cat(as.character(Sys.time()), "-",
-      " r-getPhenoData(): Read data file ... \n")
-  dta <- read.csv(paste0("data/pheno/", dataId,".csv"),
-                    row.names = 1)
+      " r-getPhenoData(): Create local temp file ... \n")
+  localFile <- tempfile(pattern = "pheno",
+                        tmpdir = tempdir(),
+                        fileext = ".csv")
   cat(as.character(Sys.time()), "-",
-      " r-getPhenoData(): Read data file DONE \n")
+      " r-getPhenoData(): Download phenotypic file ... \n")
+  download.file(dtaS3Path, localFile)
+
+  cat(as.character(Sys.time()), "-",
+      " r-getPhenoData(): Read phenotypic file ... \n")
+  dta <- read.csv(localFile,
+                  row.names = 1)
+  cat(as.character(Sys.time()), "-",
+      " r-getPhenoData(): Read phenotypic file DONE \n")
 
 
   cat(as.character(Sys.time()), "-",
@@ -48,17 +66,17 @@ getPhenoData <- function(dataId){
 #' @param phenoDataId
 #'
 #' @return
-loadData <- function(markerDataId, phenoDataId){
+loadData <- function(markerS3Path, phenoS3Path){
 
   cat(as.character(Sys.time()), "-",
       " r-loadData(): get marker data ...\n")
-  mDta <- getMarkerData(markerDataId)
+  mDta <- getMarkerData(markerS3Path)
   cat(as.character(Sys.time()), "-",
       " r-loadData(): get marker data DONE\n")
 
   cat(as.character(Sys.time()), "-",
       " r-loadData(): get pheno data ...\n")
-  pDta <- getPhenoData(phenoDataId)
+  pDta <- getPhenoData(phenoS3Path)
   cat(as.character(Sys.time()), "-",
       " r-loadData(): get pheno data DONE\n")
 

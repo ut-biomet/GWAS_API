@@ -113,8 +113,8 @@ function(){
 ##### GWAS #####
 #* Fit a GWAS model (type 2)
 #* @tag Models
-#* @param markerDataId id of the genetic data
-#* @param phenoDataId id of the phenotypic data
+#* @param markerS3Path url of the markers data file (.vcf.gz file)
+#* @param phenoS3Path url of the phenotypic data file (csv file)
 #* @param trait The trait to be analyzed
 #* @param test The testing method (lrt, Wald or score)
 #* @param fixed The option chosen for fixed effect (number of PC, or none (0))
@@ -123,8 +123,8 @@ function(){
 #* @serializer unboxedJSON
 #* @post /gwas
 function(res,
-         markerDataId,
-         phenoDataId,
+         markerS3Path,
+         phenoS3Path,
          trait,
          test,
          fixed = 0,
@@ -134,8 +134,8 @@ function(res,
   callTime <- Sys.time()
   out <- list(
     inputParams = list(
-      markerDataId = markerDataId,
-      phenoDataId = phenoDataId,
+      markerS3Path = markerS3Path,
+      phenoS3Path = phenoS3Path,
       trait = trait,
       test = test,
       fixed = as.character(fixed),
@@ -148,8 +148,8 @@ function(res,
   cat(as.character(Sys.time()), "-",
       "/gwas: call with parameters parameters:\n")
   cat(
-    "\t markerDataId: ", markerDataId,"\n",
-    "\t phenoDataId: ", phenoDataId, "\n",
+    "\t markerS3Path: ", markerS3Path,"\n",
+    "\t phenoS3Path: ", phenoS3Path, "\n",
     "\t trait: ", trait, "\n",
     "\t test: ", test, "\n",
     "\t fixed: ", fixed, "\n",
@@ -212,7 +212,7 @@ function(res,
   ### GET DATA
   cat(as.character(Sys.time()), "-",
       "/gwas: Load data...\n")
-  data <- loadData(markerDataId, phenoDataId)
+  data <- loadData(markerS3Path, phenoS3Path)
   cat(as.character(Sys.time()), "-",
       "/gwas: Load data DONE.\n")
 
@@ -222,8 +222,8 @@ function(res,
   # calc model
   model <- gwas(data, trait, test, fixed, tresh.maf, tresh.callrate)
   modelId <- gsub("\\.", "-",
-                  paste0("GWAS_",
-                         markerDataId, "_", phenoDataId, "_", trait,"_",
+                  paste0("GWAS-model_",
+                         "_", trait,"_",
                          as.numeric(callTime)))
   cat(as.character(Sys.time()), "-",
       "/gwas: Generate Gwas model DONE:\n")
@@ -232,8 +232,20 @@ function(res,
   # save model
   cat(as.character(Sys.time()), "-",
       "/gwas: Save model ... \n")
-  modPath <- paste0("data/models/", modelId, ".rds")
-  saveRDS(model, file = modPath)
+  localFile <- tempfile(pattern = "GWAS-Model",
+                        tmpdir = tempdir(),
+                        fileext = ".rds")
+  saveRDS(model, file = localFile)
+
+  browser()
+  modelS3Path <- "https://lf-genomic-selection.s3.amazonaws.com/project/5fa4b315952ba0085a6da020/gwas/5fa4b3d0952ba0085a6da028/gwas_test.zip?AWSAccessKeyId=AKIASMMZPYSIZTFN3HWL&Signature=8R0%2BnsG8HkIj8to3JYCifGXNVxI%3D&Expires=1605234257"
+
+
+
+
+
+
+
   cat(as.character(Sys.time()), "-",
       "/gwas: Save model DONE: \n")
   cat(paste0("\t path: ", modPath,"\n"))
@@ -250,8 +262,8 @@ function(res,
     modelId = modelId,
     locationPath = modPath,
     creationTime = callTime,
-    markerDataId = markerDataId,
-    phenoDataId = phenoDataId,
+    markerS3Path = markerS3Path,
+    phenoS3Path = phenoS3Path,
     trait = trait,
     test = test,
     fixed = as.character(fixed),
