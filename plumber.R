@@ -27,6 +27,8 @@ library(plumber)
 library(digest) # for MD5 sum calculation
 library(DT)
 library(gaston) # for many functions
+library(httr) # make HTTP requests
+library(xml2) # manage xml format
 stopifnot("git2r" %in% rownames(installed.packages()))
 
 # load API's functions
@@ -115,6 +117,7 @@ function(){
 #* @tag Models
 #* @param markerS3Path url of the markers data file (.vcf.gz file)
 #* @param phenoS3Path url of the phenotypic data file (csv file)
+#* @param modelS3Path url of the put request for saving the model
 #* @param trait The trait to be analyzed
 #* @param test The testing method (lrt, Wald or score)
 #* @param fixed The option chosen for fixed effect (number of PC, or none (0))
@@ -125,6 +128,7 @@ function(){
 function(res,
          markerS3Path,
          phenoS3Path,
+         modelS3Path,
          trait,
          test,
          fixed = 0,
@@ -136,6 +140,7 @@ function(res,
     inputParams = list(
       markerS3Path = markerS3Path,
       phenoS3Path = phenoS3Path,
+      modelS3Path = modelS3Path,
       trait = trait,
       test = test,
       fixed = as.character(fixed),
@@ -229,26 +234,35 @@ function(res,
       "/gwas: Generate Gwas model DONE:\n")
   cat(paste0("\t modelId: ", modelId,"\n"))
 
-  # save model
+  # Upload model
   cat(as.character(Sys.time()), "-",
-      "/gwas: Save model ... \n")
+  "/gwas: Upload model ...: \n")
+  cat(as.character(Sys.time()), "-",
+      "\t Save model in tmp dir... \n")
   localFile <- tempfile(pattern = "GWAS-Model",
                         tmpdir = tempdir(),
                         fileext = ".rds")
   saveRDS(model, file = localFile)
-
-  browser()
-  modelS3Path <- "https://lf-genomic-selection.s3.amazonaws.com/project/5fa4b315952ba0085a6da020/gwas/5fa4b3d0952ba0085a6da028/gwas_test.zip?AWSAccessKeyId=AKIASMMZPYSIZTFN3HWL&Signature=8R0%2BnsG8HkIj8to3JYCifGXNVxI%3D&Expires=1605234257"
-
-
-
-
-
-
-
   cat(as.character(Sys.time()), "-",
-      "/gwas: Save model DONE: \n")
-  cat(paste0("\t path: ", modPath,"\n"))
+      "\t Make PUT request to AWS S3 ... \n")
+  putResult <- PUT(url = modelS3Path,
+                   body = upload_file(localFile, type = ""))
+
+  if (putResult$status_code != 200) {
+    cat(as.character(Sys.time()), "-",
+        "/gwas: Error, PUT request's satus code is different than 200: ", putResult$status,"\n")
+    res$status <- putResult$status_code
+    out <- as_list(content(putResult))
+    out$GWAS_API_error <- "error PUT request didn't get status code 200"
+    cat(as.character(Sys.time()), "-",
+        '/gwas: Exit with error code ', putResult$status, '\n')
+    cat(as.character(Sys.time()), "-",
+        "/gwas: END \n")
+    return(out)
+  }
+  cat(as.character(Sys.time()), "-",
+      "/gwas: Upload model DONE: \n")
+  cat(paste0("\t putUrl: ", modelS3Path,"\n"))
 
   # TODO:
   # see : https://docs.google.com/document/d/1gaTazFm_a6klD9krZPKGHc5x_D-SWL8K93M6dwsTiLE/edit
@@ -260,7 +274,7 @@ function(res,
       "/gwas: Save model information ... \n")
   out$modelInfo <- list(
     modelId = modelId,
-    locationPath = modPath,
+    putUrl = modelS3Path,
     creationTime = callTime,
     markerS3Path = markerS3Path,
     phenoS3Path = phenoS3Path,
@@ -270,7 +284,7 @@ function(res,
     tresh.maf = as.character(tresh.maf),
     tresh.callrate = as.character(tresh.callrate),
     modelRobjectMD5 = digest(model),
-    modelFileMD5 = digest(file = modPath)
+    modelFileMD5 = digest(file = localFile)
   )
   cat(as.character(Sys.time()), "-",
       "/gwas: Save model information DONE \n")
@@ -389,18 +403,18 @@ function(res,
 
 #* Manhattan plot (type 2)
 #* @tag Plots
-#* @param modelId GWAS model id
+#* @param modelS3Path url of the model data file (rds file)
 #* @param adj_method either bonferroni or FDR
 #* @param thresh.p
 #* @png
 #* @get /manplot
-function(res, modelId, adj_method, thresh.p = 0.05){
+function(res, modelS3Path, adj_method, thresh.p = 0.05){
   # # save call time.
   # callTime <- Sys.time()
 
   out <- list(
     inputParams = list(
-      modelId = modelId,
+      modelS3Path = modelS3Path,
       adj_method = adj_method,
       thresh.p = as.character(thresh.p)
     )
@@ -409,7 +423,7 @@ function(res, modelId, adj_method, thresh.p = 0.05){
   cat(as.character(Sys.time()), "-",
       "/manplot: call with parameters parameters:\n")
   cat(
-    "\t modelId: ", modelId,"\n",
+    "\t modelS3Path: ", modelS3Path,"\n",
     "\t adj_method: ", adj_method, "\n",
     "\t thresh.p: ", thresh.p, "\n"
   )
@@ -438,8 +452,7 @@ function(res, modelId, adj_method, thresh.p = 0.05){
   # LOAD MODEL
   cat(as.character(Sys.time()), "-",
       "/manplot: load model ...\n")
-  gwa <- readRDS(paste0("data/models/", modelId, ".rds"))
-  # can also be done in an external function: gwa <- loadModel(modelId)
+  gwa <- loadModel(modelS3Path)
   cat(as.character(Sys.time()), "-",
       "/manplot: load model DONE.\n")
 
@@ -457,7 +470,7 @@ function(res, modelId, adj_method, thresh.p = 0.05){
       "/manplot: Create plot ...\n")
   p <- manhattan(gwa, pch = 20, col = col,
                  main = "TO DO trait name", # extract trait name from database
-            sub = modelId)
+            sub = modelS3Path)
   cat(as.character(Sys.time()), "-",
       "/manplot: Create plot DONE\n")
   cat(as.character(Sys.time()), "-",
@@ -474,16 +487,16 @@ function(res, modelId, adj_method, thresh.p = 0.05){
 
 #* LD plot
 #* @tag Plots
-#* @param markerDataId
+#* @param markerS3Path url of the markers data file (.vcf.gz file)
 #* @param from (total number of SNP should be < 50)
 #* @param to (total number of SNP should be < 50)
 #* @png
 #* @get /LDplot
-function(res, markerDataId, from, to){
+function(res, markerS3Path, from, to){
 
   out <- list(
     inputParams = list(
-      markerDataId = markerDataId,
+      markerS3Path = markerS3Path,
       from = from,
       to = to
     )
@@ -492,7 +505,7 @@ function(res, markerDataId, from, to){
   cat(as.character(Sys.time()), "-",
       "/LDplot: call with parameters parameters:\n")
   cat(
-    "\t markerDataId: ", markerDataId,"\n",
+    "\t markerS3Path: ", markerS3Path,"\n",
     "\t from: ", from, "\n",
     "\t to: ", to, "\n"
   )
@@ -571,7 +584,7 @@ function(res, markerDataId, from, to){
   ### GET DATA
   cat(as.character(Sys.time()), "-",
       "/LDplot: Load data...\n")
-  bm.wom <- getMarkerData(markerDataId)
+  bm.wom <- getMarkerData(markerS3Path)
   cat(as.character(Sys.time()), "-",
       "/LDplot: Load data DONE\n")
 
@@ -602,16 +615,16 @@ function(res, markerDataId, from, to){
 
 #* Table of selected SNPs
 #* @tag Data
-#* @param modelId GWAS model id
+#* @param modelS3Path url of the model data file (rds file)
 #* @param adj_method either bonferroni or FDR
 #* @param thresh.p threshold for p values. If not specify return all values
 #* @serializer unboxedJSON
 #* @get /datatable
-function(res, modelId, adj_method, thresh.p = NA){
+function(res, modelS3Path, adj_method, thresh.p = NA){
 
   out <- list(
     inputParams = list(
-      modelId = modelId,
+      modelS3Path = modelS3Path,
       adj_method = adj_method,
       thresh.p = as.character(thresh.p)
     )
@@ -620,7 +633,7 @@ function(res, modelId, adj_method, thresh.p = NA){
   cat(as.character(Sys.time()), "-",
       "/datatable: call with parameters parameters:\n")
   cat(
-    "\t modelId: ", modelId,"\n",
+    "\t modelS3Path: ", modelS3Path,"\n",
     "\t adj_method: ", adj_method, "\n",
     "\t thresh.p: ", thresh.p, "\n"
   )
@@ -646,8 +659,7 @@ function(res, modelId, adj_method, thresh.p = NA){
   # LOAD MODEL
   cat(as.character(Sys.time()), "-",
       "/datatable: Load model...\n")
-  gwa <- readRDS(paste0("data/models/", modelId, ".rds"))
-  # can also be done in an external function: gwa <- loadModel(modelId)
+  gwa <- loadModel(modelS3Path)
   cat(as.character(Sys.time()), "-",
       "/datatable: Load model DONE\n")
 

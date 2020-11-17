@@ -119,7 +119,30 @@ loadData <- function(markerS3Path, phenoS3Path){
 }
 
 
+#' load a gwas model 
+#'
+#' @param modelS3Path url of the model data file (rds file)
+#' @return
+loadModel <- function(modelS3Path){
+  cat(as.character(Sys.time()), "-",
+      " r-loadModel(): Create local temp file ... \n")
+  localFile <- tempfile(pattern = "downloadedModel",
+                        tmpdir = tempdir(),
+                        fileext = ".rds")
+  cat(as.character(Sys.time()), "-",
+      " r-loadModel(): Download model file ... \n")
+  download.file(modelS3Path, localFile)
 
+  cat(as.character(Sys.time()), "-",
+      " r-loadModel(): Read model file ... \n")
+  gwa <- readRDS(localFile)
+  cat(as.character(Sys.time()), "-",
+      " r-loadModel(): Read model file DONE \n")
+
+  cat(as.character(Sys.time()), "-",
+      " r-loadModel(): DONE, return output.\n")
+  gwa
+}
 
 #' get list of GWAS models
 #'
