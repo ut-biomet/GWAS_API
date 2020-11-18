@@ -1,4 +1,4 @@
-FROM trestletech/plumber
+FROM rstudio/plumber
 LABEL maintainer="Julien Diot <juliendiot@ut-biomet.org>"
 
 EXPOSE 8080
