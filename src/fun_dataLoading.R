@@ -128,16 +128,21 @@ loadModel <- function(modelS3Path){
       " r-loadModel(): Create local temp file ... \n")
   localFile <- tempfile(pattern = "downloadedModel",
                         tmpdir = tempdir(),
-                        fileext = ".rds")
+                        fileext = ".json")
   cat(as.character(Sys.time()), "-",
       " r-loadModel(): Download model file ... \n")
   download.file(modelS3Path, localFile)
 
   cat(as.character(Sys.time()), "-",
       " r-loadModel(): Read model file ... \n")
-  gwa <- readRDS(localFile)
+  gwa <- readLines(localFile)
   cat(as.character(Sys.time()), "-",
       " r-loadModel(): Read model file DONE \n")
+  cat(as.character(Sys.time()), "-",
+      " r-loadModel(): Convert Json to data.frame ... \n")
+  gwa <- data.frame(fromJSON(gwa))
+  cat(as.character(Sys.time()), "-",
+      " r-loadModel(): Convert Json to data.frame DONE \n")
 
   cat(as.character(Sys.time()), "-",
       " r-loadModel(): DONE, return output.\n")

@@ -31,6 +31,7 @@ library(DT)
 library(gaston) # for many functions
 library(httr) # make HTTP requests
 library(xml2) # manage xml format
+library(rjson) # manage json format
 stopifnot("git2r" %in% rownames(installed.packages()))
 
 # load API's functions
@@ -241,15 +242,17 @@ function(res,
   "/gwas: Upload model ...: \n")
   cat(as.character(Sys.time()), "-",
       "\t Save model in tmp dir... \n")
-  localFile <- tempfile(pattern = "GWAS-Model",
+
+  localFile <- tempfile(pattern = "GWAS-Results",
                         tmpdir = tempdir(),
-                        fileext = ".rds")
-  saveRDS(model, file = localFile)
+                        fileext = ".json")
+
+  writeLines(toJSON(model), con = localFile)
+
   cat(as.character(Sys.time()), "-",
       "\t Make PUT request to AWS S3 ... \n")
   putResult <- PUT(url = modelS3Path,
                    body = upload_file(localFile, type = ""))
-
   if (putResult$status_code != 200) {
     cat(as.character(Sys.time()), "-",
         "/gwas: Error, PUT request's satus code is different than 200: ", putResult$status,"\n")
