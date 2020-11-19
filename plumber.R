@@ -34,7 +34,7 @@ library(xml2) # manage xml format
 stopifnot("git2r" %in% rownames(installed.packages()))
 
 # load API's functions
-sapply(list.files("functions",
+sapply(list.files("src",
                   pattern = "\\.R$", # all files ending by ".R"
                   full.names = TRUE),
        source)
