@@ -123,8 +123,8 @@ function(){
 #* @param trait The trait to be analyzed
 #* @param test The testing method (lrt, Wald or score)
 #* @param fixed The option chosen for fixed effect (number of PC, or none (0))
-#* @param tresh.maf keep markers with a MAF > tresh.maf
-#* @param tresh.callrate keep markers with a callrate > tresh.callrate
+#* @param thresh_maf keep markers with a MAF > thresh_maf
+#* @param thresh_callrate keep markers with a callrate > thresh_callrate
 #* @serializer unboxedJSON
 #* @post /gwas
 function(res,
@@ -134,8 +134,8 @@ function(res,
          trait,
          test,
          fixed = 0,
-         tresh.maf = 0.05,
-         tresh.callrate = 0.9){
+         thresh_maf = 0.05,
+         thresh_callrate = 0.9){
   # save call time.
   callTime <- Sys.time()
   out <- list(
@@ -146,11 +146,11 @@ function(res,
       trait = trait,
       test = test,
       fixed = as.character(fixed),
-      tresh.maf = as.character(tresh.maf),
-      tresh.callrate = as.character(tresh.callrate)
+      thresh_maf = as.character(thresh_maf),
+      thresh_callrate = as.character(thresh_callrate)
     )
   )
-  # TODO ask Shuei if it is nessesary to specify that parameters used default values (for fixed, tresh.maf, tresh.callrate)
+  # TODO ask Shuei if it is nessesary to specify that parameters used default values (for fixed, thresh_maf, thresh_callrate)
 
   cat(as.character(Sys.time()), "-",
       "/gwas: call with parameters parameters:\n")
@@ -160,8 +160,8 @@ function(res,
     "\t trait: ", trait, "\n",
     "\t test: ", test, "\n",
     "\t fixed: ", fixed, "\n",
-    "\t tresh.maf: ", tresh.maf, "\n",
-    "\t tresh.callrate: ", tresh.callrate, "\n"
+    "\t thresh_maf: ", thresh_maf, "\n",
+    "\t thresh_callrate: ", thresh_callrate, "\n"
   )
 
 
@@ -184,13 +184,13 @@ function(res,
     return(out)
   }
 
-  if (!is.na(as.numeric(tresh.maf))) {
-    tresh.maf <- as.numeric(tresh.maf)
+  if (!is.na(as.numeric(thresh_maf))) {
+    thresh_maf <- as.numeric(thresh_maf)
   } else {
     cat(as.character(Sys.time()), "-",
-        '/gwas: Error: "tresh.maf" cannot be converted to numeric.\n')
+        '/gwas: Error: "thresh_maf" cannot be converted to numeric.\n')
     res$status <- 400 # bad request
-    out$error <- '"tresh.maf" should be a numeric value.'
+    out$error <- '"thresh_maf" should be a numeric value.'
     cat(as.character(Sys.time()), "-",
         '/gwas: Exit with error code 400\n')
     cat(as.character(Sys.time()), "-",
@@ -198,13 +198,13 @@ function(res,
     return(out)
   }
 
-  if (!is.na(as.numeric(tresh.callrate))) {
-    tresh.callrate <- as.numeric(tresh.callrate)
+  if (!is.na(as.numeric(thresh_callrate))) {
+    thresh_callrate <- as.numeric(thresh_callrate)
   } else {
     cat(as.character(Sys.time()), "-",
-        '/gwas: Error: "tresh.callrate" cannot be converted to numeric.\n')
+        '/gwas: Error: "thresh_callrate" cannot be converted to numeric.\n')
     res$status <- 400 # bad request
-    out$error <- '"tresh.callrate" should be a numeric value.'
+    out$error <- '"thresh_callrate" should be a numeric value.'
     cat(as.character(Sys.time()), "-",
         '/gwas: Exit with error code 400\n')
     cat(as.character(Sys.time()), "-",
@@ -227,7 +227,7 @@ function(res,
   cat(as.character(Sys.time()), "-",
       "/gwas: Generate Gwas model...\n")
   # calc model
-  model <- gwas(data, trait, test, fixed, tresh.maf, tresh.callrate)
+  model <- gwas(data, trait, test, fixed, thresh_maf, thresh_callrate)
   modelId <- gsub("\\.", "-",
                   paste0("GWAS-model_",
                          "_", trait,"_",
@@ -283,8 +283,8 @@ function(res,
     trait = trait,
     test = test,
     fixed = as.character(fixed),
-    tresh.maf = as.character(tresh.maf),
-    tresh.callrate = as.character(tresh.callrate),
+    thresh_maf = as.character(thresh_maf),
+    thresh_callrate = as.character(thresh_callrate),
     modelRobjectMD5 = digest(model),
     modelFileMD5 = digest(file = localFile)
   )
@@ -314,10 +314,10 @@ function(res,
 #* @tag Plots
 #* @param modelS3Path url of the model data file (rds file)
 #* @param adj_method either bonferroni or FDR
-#* @param thresh.p
+#* @param thresh_p
 #* @serializer png
 #* @get /manplot
-function(res, modelS3Path, adj_method, thresh.p = 0.05){
+function(res, modelS3Path, adj_method, thresh_p = 0.05){
   # # save call time.
   # callTime <- Sys.time()
 
@@ -325,7 +325,7 @@ function(res, modelS3Path, adj_method, thresh.p = 0.05){
     inputParams = list(
       modelS3Path = modelS3Path,
       adj_method = adj_method,
-      thresh.p = as.character(thresh.p)
+      thresh_p = as.character(thresh_p)
     )
   )
 
@@ -334,7 +334,7 @@ function(res, modelS3Path, adj_method, thresh.p = 0.05){
   cat(
     "\t modelS3Path: ", modelS3Path,"\n",
     "\t adj_method: ", adj_method, "\n",
-    "\t thresh.p: ", thresh.p, "\n"
+    "\t thresh_p: ", thresh_p, "\n"
   )
 
 
@@ -342,13 +342,13 @@ function(res, modelS3Path, adj_method, thresh.p = 0.05){
   # Convert to numeric
   cat(as.character(Sys.time()), "-",
       "/manplot: Convert numeric parameters...\n")
-  if (!is.na(as.numeric(thresh.p))) {
-    thresh.p <- as.numeric(thresh.p)
+  if (!is.na(as.numeric(thresh_p))) {
+    thresh_p <- as.numeric(thresh_p)
   } else {
     cat(as.character(Sys.time()), "-",
-        '/manplot: Error: "thresh.p" cannot be converted to numeric.\n')
+        '/manplot: Error: "thresh_p" cannot be converted to numeric.\n')
     res$status <- 400 # bad request
-    out$error <- '"thresh.p" should be a numeric value.'
+    out$error <- '"thresh_p" should be a numeric value.'
     cat(as.character(Sys.time()), "-",
         '/manplot: Exit with error code 400\n')
     cat(as.character(Sys.time()), "-",
@@ -374,7 +374,7 @@ function(res, modelS3Path, adj_method, thresh.p = 0.05){
 
   col <- rep("black", nrow(gwa))
   col[gwa$chr %% 2 == 0] <- "gray50"
-  col[p.adj < thresh.p] <- "green"
+  col[p.adj < thresh_p] <- "green"
   cat(as.character(Sys.time()), "-",
       "/manplot: Create plot ...\n")
   p <- manhattan(gwa, pch = 20, col = col,
@@ -526,16 +526,16 @@ function(res, markerS3Path, from, to){
 #* @tag Data
 #* @param modelS3Path url of the model data file (rds file)
 #* @param adj_method either bonferroni or FDR
-#* @param thresh.p threshold for p values. If not specify return all values
+#* @param thresh_p threshold for p values. If not specify return all values
 #* @serializer unboxedJSON
 #* @get /datatable
-function(res, modelS3Path, adj_method, thresh.p = NA){
+function(res, modelS3Path, adj_method, thresh_p = NA){
 
   out <- list(
     inputParams = list(
       modelS3Path = modelS3Path,
       adj_method = adj_method,
-      thresh.p = as.character(thresh.p)
+      thresh_p = as.character(thresh_p)
     )
   )
 
@@ -544,7 +544,7 @@ function(res, modelS3Path, adj_method, thresh.p = NA){
   cat(
     "\t modelS3Path: ", modelS3Path,"\n",
     "\t adj_method: ", adj_method, "\n",
-    "\t thresh.p: ", thresh.p, "\n"
+    "\t thresh_p: ", thresh_p, "\n"
   )
 
 
@@ -552,13 +552,13 @@ function(res, modelS3Path, adj_method, thresh.p = NA){
   # Convert to numeric
   cat(as.character(Sys.time()), "-",
       "/datatable: Convert numeric parameters...\n")
-  if (!is.na(as.numeric(thresh.p)) | is.na(thresh.p)) {
-    thresh.p <- as.numeric(thresh.p)
+  if (!is.na(as.numeric(thresh_p)) | is.na(thresh_p)) {
+    thresh_p <- as.numeric(thresh_p)
   } else {
     cat(as.character(Sys.time()), "-",
-        '/datatable: Error: "thresh.p" cannot be converted to numeric.\n')
+        '/datatable: Error: "thresh_p" cannot be converted to numeric.\n')
     res$status <- 400 # bad request
-    out$error <- '"thresh.p" should be a numeric value.'
+    out$error <- '"thresh_p" should be a numeric value.'
     return(out)
   }
   cat(as.character(Sys.time()), "-",
@@ -583,13 +583,13 @@ function(res, modelS3Path, adj_method, thresh.p = NA){
   cat(as.character(Sys.time()), "-",
       "/datatable: Create response ... \n")
   res$status <- 200 # status for good GET response
-  if (is.na(thresh.p)) {
+  if (is.na(thresh_p)) {
     out$data <- gwa
   } else {
-    out$data <- gwa[p.adj < thresh.p, ]
+    out$data <- gwa[p.adj < thresh_p, ]
   }
 
-  # datatable(gwa[p.adj < thresh.p, ])
+  # datatable(gwa[p.adj < thresh_p, ])
   cat(as.character(Sys.time()), "-",
       "/datatable: Create response DONE \n")
   cat(as.character(Sys.time()), "-",

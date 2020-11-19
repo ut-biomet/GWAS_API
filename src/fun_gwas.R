@@ -12,7 +12,7 @@
 #' @param maf (0 < maf < 0.5)
 #' @param callrate (0 < callrate <= 1)
 #'
-gwas <- function(data, trait, test, fixed, thresh.maf, thresh.callrate) {
+gwas <- function(data, trait, test, fixed, thresh_maf, thresh_callrate) {
 
 	### GET DATA
   cat(as.character(Sys.time()), "-",
@@ -38,8 +38,8 @@ gwas <- function(data, trait, test, fixed, thresh.maf, thresh.callrate) {
 	# and low missing rate (callrate>0.9)
 	cat(as.character(Sys.time()), "-",
 	    " r-gwas(): filter SNPs ... \n")
-	bm <- select.snps(bm, maf > thresh.maf)
-	bm <- select.snps(bm, callrate > thresh.callrate)
+	bm <- select.snps(bm, maf > thresh_maf)
+	bm <- select.snps(bm, callrate > thresh_callrate)
 	cat(as.character(Sys.time()), "-",
 	    " r-gwas(): filter SNPs DONE \n")
 
