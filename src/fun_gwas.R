@@ -13,39 +13,32 @@
 #' @param callrate (0 < callrate <= 1)
 #'
 gwas <- function(data, trait, test, fixed, thresh_maf, thresh_callrate) {
-
+  logger <- logger$new("r-gwas()")
 	### GET DATA
-  cat(as.character(Sys.time()), "-",
-      " r-gwas(): aggregate data ... \n")
+  logger$log("aggregate data ...")
 	bm <- data$markerData
 	bm@ped$pheno <- data$phenoData[, trait]
 	K <- data$grMatrix
-	cat(as.character(Sys.time()), "-",
-	    " r-gwas(): aggregate data DONE \n")
+	logger$log("aggregate data DONE")
 
 	### FILTER SAMPLES
 	# remove samples with missing phenotypic values
-	cat(as.character(Sys.time()), "-",
-	    " r-gwas(): remove samples with missing phenotypic values ... \n")
+	logger$log("remove samples with missing phenotypic values ...")
 	bm <- select.inds(bm, !is.na(pheno))
 	K <- K[bm@ped$id, bm@ped$id]
-	cat(as.character(Sys.time()), "-",
-	    " r-gwas(): remove samples with missing phenotypic values DONE \n")
+	logger$log("remove samples with missing phenotypic values DONE")
 
 
 	### FILTER SNPs
 	# keep marker with a large enough MAF (>0.05)
 	# and low missing rate (callrate>0.9)
-	cat(as.character(Sys.time()), "-",
-	    " r-gwas(): filter SNPs ... \n")
+	logger$log("filter SNPs ...")
 	bm <- select.snps(bm, maf > thresh_maf)
 	bm <- select.snps(bm, callrate > thresh_callrate)
-	cat(as.character(Sys.time()), "-",
-	    " r-gwas(): filter SNPs DONE \n")
+	logger$log("filter SNPs DONE")
 
 	### FIT MODEL
-	cat(as.character(Sys.time()), "-",
-	    " r-gwas(): fit model ... \n")
+	logger$log("fit model ...")
    	if (test != "score") {
     	gwa <- association.test(
         	bm,
@@ -63,11 +56,9 @@ gwas <- function(data, trait, test, fixed, thresh_maf, thresh_callrate) {
         	K = K,
         	p = fixed)
     }
-	cat(as.character(Sys.time()), "-",
-	    " r-gwas(): fit model DONE \n")
+	logger$log("fit model DONE")
 
-	cat(as.character(Sys.time()), "-",
-	    " r-gwas(): DONE, return output.\n")
+	logger$log("DONE, return output.")
 
 	return(gwa)
 

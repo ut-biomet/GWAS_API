@@ -11,22 +11,18 @@
 #'
 #' @return bed.matrix
 getMarkerData <- function(dtaS3Path) {
-  cat(as.character(Sys.time()), "-",
-      " r-getMarkerData(): Create local temp file ... \n")
+  logger <- logger$new("r-getMarkerData()")
+  logger$log("Create local temp file ... ")
   localFile <- tempfile(pattern = "markers",
                         tmpdir = tempdir(),
                         fileext = ".vcf.gz")
-  cat(as.character(Sys.time()), "-",
-      " r-getMarkerData(): Download markers file ... \n")
+  logger$log("Download markers file ...")
   download.file(dtaS3Path, localFile)
 
-  cat(as.character(Sys.time()), "-",
-      " r-getMarkerData(): Read markers file ... \n")
+  logger$log("Read markers file ... ")
   dta <- read.vcf(localFile, verbose = FALSE)
-  cat(as.character(Sys.time()), "-",
-      " r-getMarkerData(): Read markers file DONE \n")
-  cat(as.character(Sys.time()), "-",
-      " r-getMarkerData(): DONE, return output.\n")
+  logger$log("Read markers file DONE ")
+  logger$log("DONE, return output.")
   dta
 }
 
@@ -36,25 +32,21 @@ getMarkerData <- function(dtaS3Path) {
 #'
 #' @return data.frame
 getPhenoData <- function(dtaS3Path){
-  cat(as.character(Sys.time()), "-",
-      " r-getPhenoData(): Create local temp file ... \n")
+  logger <- logger$new("r-getPhenoData()")
+  logger$log("Create local temp file ... ")
   localFile <- tempfile(pattern = "pheno",
                         tmpdir = tempdir(),
                         fileext = ".csv")
-  cat(as.character(Sys.time()), "-",
-      " r-getPhenoData(): Download phenotypic file ... \n")
+  logger$log("Download phenotypic file ... ")
   download.file(dtaS3Path, localFile)
 
-  cat(as.character(Sys.time()), "-",
-      " r-getPhenoData(): Read phenotypic file ... \n")
+  logger$log("Read phenotypic file ... ")
   dta <- read.csv(localFile,
                   row.names = 1)
-  cat(as.character(Sys.time()), "-",
-      " r-getPhenoData(): Read phenotypic file DONE \n")
+  logger$log("Read phenotypic file DONE ")
 
 
-  cat(as.character(Sys.time()), "-",
-      " r-getPhenoData(): DONE, return output.\n")
+  logger$log("DONE, return output.")
   dta
 }
 
@@ -67,53 +59,40 @@ getPhenoData <- function(dtaS3Path){
 #'
 #' @return
 loadData <- function(markerS3Path, phenoS3Path){
-
-  cat(as.character(Sys.time()), "-",
-      " r-loadData(): get marker data ...\n")
+  logger <- logger$new("r-loadData()")
+  logger$log("get marker data ...")
   mDta <- getMarkerData(markerS3Path)
-  cat(as.character(Sys.time()), "-",
-      " r-loadData(): get marker data DONE\n")
+  logger$log("get marker data DONE")
 
-  cat(as.character(Sys.time()), "-",
-      " r-loadData(): get pheno data ...\n")
+  logger$log("get pheno data ...")
   pDta <- getPhenoData(phenoS3Path)
-  cat(as.character(Sys.time()), "-",
-      " r-loadData(): get pheno data DONE\n")
+  logger$log("get pheno data DONE")
 
 
   # Remove from marker data individuals that are not in phenotypic data-set
-  cat(as.character(Sys.time()), "-",
-      " r-loadData(): Remove from marker data individuals that are not in phenotypic data-set ...\n")
+  logger$log("Remove from marker data individuals that are not in phenotypic data-set ...")
   mDta <- select.inds(mDta, id %in% rownames(pDta))
-  cat(as.character(Sys.time()), "-",
-      " r-loadData(): Remove from marker data individuals that are not in phenotypic data-set DONE\n")
+  logger$log("Remove from marker data individuals that are not in phenotypic data-set DONE")
 
 
   # reorder phenotypic data with id in bed matrix
-  cat(as.character(Sys.time()), "-",
-  " r-loadData(): reorder matrix ...\n")
+  logger$log("reorder matrix ...")
   pDta <- pDta[mDta@ped$id,]
-  cat(as.character(Sys.time()), "-",
-      " r-loadData(): reorder matrix DONE\n")
+  logger$log("reorder matrix DONE")
 
 
   # remove monomorphic markers
-  cat(as.character(Sys.time()), "-",
-      " r-loadData(): remove monomorphic markers ...\n")
+  logger$log("remove monomorphic markers ...")
   mDta <- select.snps(mDta, maf > 0)
-  cat(as.character(Sys.time()), "-",
-      " r-loadData(): remove monomorphic markers DONE\n")
+  logger$log("remove monomorphic markers DONE")
 
 
   # calculate genetic relatinoal matrix
-  cat(as.character(Sys.time()), "-",
-      " r-loadData(): calculate genetic relatinoal matrix ...\n")
+  logger$log("calculate genetic relatinoal matrix ...")
   grm <- GRM(mDta)
-  cat(as.character(Sys.time()), "-",
-      " r-loadData(): calculate genetic relatinoal matrix DONE\n")
+  logger$log("calculate genetic relatinoal matrix DONE")
 
-  cat(as.character(Sys.time()), "-",
-       " r-loadData(): DONE, return output.\n")
+  logger$log("DONE, return output.")
 
   list(markerData = mDta, phenoData = pDta, grMatrix = grm)
 }
@@ -124,27 +103,21 @@ loadData <- function(markerS3Path, phenoS3Path){
 #' @param modelS3Path url of the model data file (rds file)
 #' @return
 loadModel <- function(modelS3Path){
-  cat(as.character(Sys.time()), "-",
-      " r-loadModel(): Create local temp file ... \n")
+  logger <- logger$new("r-loadModel()")
+  logger$log("Create local temp file ... ")
   localFile <- tempfile(pattern = "downloadedModel",
                         tmpdir = tempdir(),
                         fileext = ".json")
-  cat(as.character(Sys.time()), "-",
-      " r-loadModel(): Download model file ... \n")
+  logger$log("Download model file ... ")
   download.file(modelS3Path, localFile)
 
-  cat(as.character(Sys.time()), "-",
-      " r-loadModel(): Read model file ... \n")
+  logger$log("Read model file ... ")
   gwa <- readLines(localFile)
-  cat(as.character(Sys.time()), "-",
-      " r-loadModel(): Read model file DONE \n")
-  cat(as.character(Sys.time()), "-",
-      " r-loadModel(): Convert Json to data.frame ... \n")
+  logger$log("Read model file DONE ")
+  logger$log("Convert Json to data.frame ... ")
   gwa <- data.frame(fromJSON(gwa))
-  cat(as.character(Sys.time()), "-",
-      " r-loadModel(): Convert Json to data.frame DONE \n")
+  logger$log("Convert Json to data.frame DONE ")
 
-  cat(as.character(Sys.time()), "-",
-      " r-loadModel(): DONE, return output.\n")
+  logger$log("DONE, return output.")
   gwa
 }
