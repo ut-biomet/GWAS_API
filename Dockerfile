@@ -20,7 +20,7 @@ RUN SNAPSHOT="https://cran.microsoft.com/snapshot/2020-03-17/" && \
     touch /.Rprofile && \
     echo "options(repos = c(CRAN = '$SNAPSHOT'))" >> ~/.Rprofile
 
-RUN R -e "install.packages(c('BGLR', 'digest', 'DT', 'gaston', 'httr', 'magick', 'git2r', 'xml2', 'httr', 'rjson', 'redux'), quiet = FALSE)"
+RUN R -e "install.packages(c('BGLR', 'digest', 'DT', 'gaston', 'httr', 'magick', 'git2r', 'xml2', 'httr', 'rjson', 'manhattanly', 'redux'), quiet = FALSE)"
 RUN rm ~/.Rprofile
 
 
