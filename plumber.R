@@ -33,6 +33,7 @@ library(httr) # make HTTP requests
 library(xml2) # manage xml format
 library(rjson) # manage json format
 library(R6) # R6 objects
+library(manhattanly) # manhattan plot using plotly
 stopifnot("git2r" %in% rownames(installed.packages()))
 
 # load API's functions
@@ -290,9 +291,10 @@ function(res,
 #* @param modelS3Path url of the model data file (rds file)
 #* @param adj_method either bonferroni or FDR
 #* @param thresh_p
-#* @serializer png
+#* @param chr names of the chromosomes to show separated using comma. Show all chromosomes if nothing is specified.
+#* @serializer htmlwidget
 #* @get /manplot
-function(res, modelS3Path, adj_method, thresh_p = 0.05){
+function(res, modelS3Path, adj_method, thresh_p = 0.05, chr = NA){
   # # save call time.
   # callTime <- Sys.time()
   logger <- logger$new("/manplot")
@@ -300,7 +302,8 @@ function(res, modelS3Path, adj_method, thresh_p = 0.05){
     inputParams = list(
       modelS3Path = modelS3Path,
       adj_method = adj_method,
-      thresh_p = as.character(thresh_p)
+      thresh_p = as.character(thresh_p),
+      chr = chr
     )
   )
 
@@ -308,7 +311,8 @@ function(res, modelS3Path, adj_method, thresh_p = 0.05){
   logger$log(time = FALSE, context = FALSE,
     "modelS3Path: ", modelS3Path,"\n",
     "\t adj_method: ", adj_method, "\n",
-    "\t thresh_p: ", thresh_p,)
+    "\t thresh_p: ", thresh_p, "\n",
+    "\t chr: ", chr)
 
 
   ### CHECK PARAMETERS
@@ -331,18 +335,37 @@ function(res, modelS3Path, adj_method, thresh_p = 0.05){
   gwa <- loadModel(modelS3Path)
   logger$log("load model DONE.")
 
-  # CREATE PLOT
-  logger$log("Adjust p-values ...")
-  p.adj <- p.adjust(gwa$p, method = adj_method)
-  logger$log("Adjust p-values DONE")
+  ### CHECK PARAMETERS 2
+  logger$log('Check "chr" parameter ...')
+  if (!is.na(chr)) {
+    # extract chr names
+    chr <- strsplit(chr, ",")[[1]]
+    if (!all(chr %in% as.character(unique(gwa$chr)))) {
+      logger$log('Warning: "chr" is not valid, chromosomes\'names specified are not in the data.')
+      logger$log(time = FALSE, context = FALSE,
+                 '"chr" is:', chr, "\n",
+                 '"gwa$chr" is: ', as.character(unique(gwa$chr)))
+      logger$log(time = FALSE, context = FALSE,
+                 'mismatch will be deleted')
+      chr <- chr[chr %in% as.character(unique(gwa$chr))]
+      if (length(chr) == 0) {
+        chr <- NA
+      }
+    } else {
+      logger$log(time = FALSE, context = FALSE,
+                       '"chr" is good')
+    }
+  }
+  logger$log('Check "chr" parameter DONE')
 
-  col <- rep("black", nrow(gwa))
-  col[gwa$chr %% 2 == 0] <- "gray50"
-  col[p.adj < thresh_p] <- "green"
+
+
+  # CREATE PLOT
   logger$log("Create plot ...")
-  p <- manhattan(gwa, pch = 20, col = col,
-                 main = "TO DO trait name", # extract trait name from database
-            sub = modelS3Path)
+  p <- manPlot(gwa = gwa,
+               adj_method = adj_method,
+               thresh_p = thresh_p,
+               chr = chr)
   logger$log("Create plot DONE")
   logger$log("Create response ... ")
   res$status <- 200 # status for good GET response
