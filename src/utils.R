@@ -25,7 +25,10 @@ logger <- R6::R6Class(
     #' @param context [bool] display context in log message
     log = function(...,
                    time = TRUE,
-                   context = TRUE){
+                   context = TRUE,
+                   redis = FALSE,
+                   status = NULL,
+                   action_type = self$context){
       if (time) {
         time <- as.character(Sys.time())
       } else {
@@ -36,7 +39,17 @@ logger <- R6::R6Class(
       } else {
         context <- "  "
       }
-      cat(time, context, paste(...), "\n", sep = "")
+      message <- paste(time, context, paste(...), "\n", sep = "")
+      cat(message)
+
+      if (redis) {
+        cat("\tSend previous message to redis server\n")
+        redPub(action_type = action_type,
+               status = status,
+               message = message,
+               channel = 'MANAGEMENT_API#Logger')
+      }
+
     }
   )
 )

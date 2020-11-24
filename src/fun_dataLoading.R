@@ -17,12 +17,39 @@ getMarkerData <- function(dtaS3Path) {
                         tmpdir = tempdir(),
                         fileext = ".vcf.gz")
   logger$log("Download markers file ...")
-  download.file(dtaS3Path, localFile)
 
+  # download data file:
+  tryCatch({
+    download.file(dtaS3Path, localFile)
+  }, error = function(err) {
+    logger$log("Download markers file FAILED.\n\tURL is:", dtaS3Path,
+               "\nError message is:\n\t", err$message,
+               redis = TRUE,
+               status = "FAILED",
+               action_type = "GET_MARKER_DTA")
+    return(NULL)
+  })
+
+
+  # read data file:
   logger$log("Read markers file ... ")
-  dta <- read.vcf(localFile, verbose = FALSE)
-  logger$log("Read markers file DONE ")
-  logger$log("DONE, return output.")
+  dta <- tryCatch({
+    dta <- read.vcf(localFile, verbose = FALSE)
+    logger$log("Read markers file DONE ")
+    dta
+  }, error = function(err) {
+    logger$log("Read markers file FAILED \n\tURL is:", dtaS3Path,
+               "\nError message is:\n\t", err$message,
+               redis = TRUE,
+               status = "FAILED",
+               action_type = "GET_MARKER_DTA")
+    return(NULL)
+  })
+
+  if (!is.null(dta)) {
+    logger$log("DONE, return output.")
+  }
+
   dta
 }
 
@@ -37,14 +64,36 @@ getPhenoData <- function(dtaS3Path){
   localFile <- tempfile(pattern = "pheno",
                         tmpdir = tempdir(),
                         fileext = ".csv")
+
+  # download data file:
   logger$log("Download phenotypic file ... ")
-  download.file(dtaS3Path, localFile)
+  tryCatch({
+    download.file(dtaS3Path, localFile)
+  }, error = function(err) {
+    logger$log("Download markers file FAILED.\n\tURL is:", dtaS3Path,
+               "\nError message is:\n\t", err$message,
+               redis = TRUE,
+               status = "FAILED",
+               action_type = "GET_PHENO_DTA")
+    return(NULL)
+  })
 
+
+  # read data file:
   logger$log("Read phenotypic file ... ")
-  dta <- read.csv(localFile,
-                  row.names = 1)
-  logger$log("Read phenotypic file DONE ")
-
+  dta <- tryCatch({
+    dta <- read.csv(localFile,
+                    row.names = 1)
+    logger$log("Read phenotypic file DONE ")
+    dta
+  }, error = function(err) {
+    logger$log("Read phenotypic file FAILED \n\tURL is:", dtaS3Path,
+               "\nError message is:\n\t", err$message,
+               redis = TRUE,
+               status = "FAILED",
+               action_type = "GET_PHENO_DTA")
+    return(NULL)
+  })
 
   logger$log("DONE, return output.")
   dta

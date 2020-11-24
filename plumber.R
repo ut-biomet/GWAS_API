@@ -33,7 +33,9 @@ library(httr) # make HTTP requests
 library(xml2) # manage xml format
 library(rjson) # manage json format
 library(R6) # R6 objects
+library(redux) # manage redis
 stopifnot("git2r" %in% rownames(installed.packages()))
+
 
 # load API's functions
 sapply(list.files("src",
@@ -44,16 +46,17 @@ sapply(list.files("src",
 # create initialization logger
 initLog <- logger$new("GWAS-API-INIT")
 
-# create models folder
-initLog$log("API initialization: check 'data/models' folder")
-if (!dir.exists("data/models")) {
-  perm = "0774"
-  initLog$log("API initialization: 'data/models' not found, create it with permissions", perm)
-  dir.create("data/models", mode = perm)
-}
+# connect to redis
+initLog$log("Connexion to redis server ...")
+REDIS <<- connectRedis()
+initLog$log("Connexion to redis server DONE")
+
+# send initialization message to redis
+initLog$log("GWAS_API started",
+            redis = TRUE,
+            status = "DONE")
+
 rm("initLog")
-
-
 ##################################### Filter ###################################
 
 #* Log some information about the incoming requests
@@ -277,7 +280,10 @@ function(res,
   out$message <- "Model created"
   out$modelId <- modelId
   logger$log("Create response DONE")
-  logger$log("END")
+  logger$log("END",
+             redis = TRUE,
+             status = "DONE",
+             action_type = "GWAS")
   out
 }
 
@@ -347,7 +353,10 @@ function(res, modelS3Path, adj_method, thresh_p = 0.05){
   logger$log("Create response ... ")
   res$status <- 200 # status for good GET response
   logger$log("Create response DONE ")
-  logger$log("END")
+  logger$log("END",
+             redis = TRUE,
+             status = "DONE",
+             action_type = "MANHANTTAN_PLOT")
   p
 }
 
@@ -445,7 +454,10 @@ function(res, markerS3Path, from, to){
   logger$log("Create response ... ")
   res$status <- 200 # status for good GET response
   logger$log("Create response DONE ")
-  logger$log("END")
+  logger$log("END",
+             redis = TRUE,
+             status = "DONE",
+             action_type = "LD_PLOT")
   p
 }
 
@@ -510,7 +522,10 @@ function(res, modelS3Path, adj_method, thresh_p = NA){
 
   # datatable(gwa[p.adj < thresh_p, ])
   logger$log("Create response DONE ")
-  logger$log("END")
+  logger$log("END",
+             redis = TRUE,
+             status = "DONE",
+             action_type = "GWAS_RESULTS")
   out
 
 }
