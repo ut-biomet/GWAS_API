@@ -120,9 +120,9 @@ function(){
 ##### GWAS #####
 #* Fit a GWAS model (type 2)
 #* @tag Models
-#* @param markerS3Path url of the markers data file (.vcf.gz file)
-#* @param phenoS3Path url of the phenotypic data file (csv file)
-#* @param modelS3Path url of the put request for saving the model
+#* @param geno_url url of the markers data file (.vcf.gz file)
+#* @param pheno_url url of the phenotypic data file (csv file)
+#* @param upload_url url of the put request for saving the model
 #* @param trait The trait to be analyzed
 #* @param test The testing method (lrt, Wald or score)
 #* @param fixed The option chosen for fixed effect (number of PC, or none (0))
@@ -131,9 +131,9 @@ function(){
 #* @serializer unboxedJSON
 #* @post /gwas
 function(res,
-         markerS3Path,
-         phenoS3Path,
-         modelS3Path,
+         geno_url,
+         pheno_url,
+         upload_url,
          trait,
          test,
          fixed = 0,
@@ -144,9 +144,9 @@ function(res,
   callTime <- Sys.time()
   out <- list(
     inputParams = list(
-      markerS3Path = markerS3Path,
-      phenoS3Path = phenoS3Path,
-      modelS3Path = modelS3Path,
+      geno_url = geno_url,
+      pheno_url = pheno_url,
+      upload_url = upload_url,
       trait = trait,
       test = test,
       fixed = as.character(fixed),
@@ -158,8 +158,8 @@ function(res,
 
   logger$log("call with parameters:")
   logger$log(time = FALSE, context = FALSE,
-    "markerS3Path: ", markerS3Path,"\n",
-    "\t phenoS3Path: ", phenoS3Path, "\n",
+    "geno_url: ", geno_url,"\n",
+    "\t pheno_url: ", pheno_url, "\n",
     "\t trait: ", trait, "\n",
     "\t test: ", test, "\n",
     "\t fixed: ", fixed, "\n",
@@ -209,7 +209,7 @@ function(res,
 
   ### GET DATA
   logger$log("Load data...")
-  data <- loadData(markerS3Path, phenoS3Path)
+  data <- loadData(geno_url, pheno_url)
   logger$log("Load data DONE.")
 
   ### GWAS
@@ -235,7 +235,7 @@ function(res,
   writeLines(toJSON(model), con = localFile)
 
   logger$log("Make PUT request to AWS S3 ...")
-  putResult <- PUT(url = modelS3Path,
+  putResult <- PUT(url = upload_url,
                    body = upload_file(localFile, type = ""))
   if (putResult$status_code != 200) {
     logger$log("Error, PUT request's satus code is different than 200: ", putResult$status)
@@ -248,7 +248,7 @@ function(res,
   }
   logger$log("Upload model DONE:")
   logger$log(time = FALSE, context = FALSE,
-             "putUrl: ", modelS3Path)
+             "putUrl: ", upload_url)
 
   # TODO:
   # see : https://docs.google.com/document/d/1gaTazFm_a6klD9krZPKGHc5x_D-SWL8K93M6dwsTiLE/edit
@@ -259,10 +259,10 @@ function(res,
   logger$log("Save model information ...")
   out$modelInfo <- list(
     modelId = modelId,
-    putUrl = modelS3Path,
+    upload_url = upload_url,
     creationTime = callTime,
-    markerS3Path = markerS3Path,
-    phenoS3Path = phenoS3Path,
+    geno_url = geno_url,
+    pheno_url = pheno_url,
     trait = trait,
     test = test,
     fixed = as.character(fixed),
@@ -387,16 +387,16 @@ function(res, modelS3Path, adj_method, thresh_p = 0.05, chr = NA){
 
 #* LD plot
 #* @tag Plots
-#* @param markerS3Path url of the markers data file (.vcf.gz file)
+#* @param geno_url url of the markers data file (.vcf.gz file)
 #* @param from (total number of SNP should be < 50)
 #* @param to (total number of SNP should be < 50)
 #* @serializer png
 #* @get /LDplot
-function(res, markerS3Path, from, to){
+function(res, geno_url, from, to){
   logger <- logger$new("/LDplot")
   out <- list(
     inputParams = list(
-      markerS3Path = markerS3Path,
+      geno_url = geno_url,
       from = from,
       to = to
     )
@@ -404,7 +404,7 @@ function(res, markerS3Path, from, to){
 
   logger$log("call with parameters:")
   logger$log(time=FALSE, context=FALSE,
-    "markerS3Path: ", markerS3Path,"\n",
+    "geno_url: ", geno_url,"\n",
     "\t from: ", from, "\n",
     "\t to: ", to)
 
@@ -462,7 +462,7 @@ function(res, markerS3Path, from, to){
 
   ### GET DATA
   logger$log("Load data...")
-  bm.wom <- getMarkerData(markerS3Path)
+  bm.wom <- getMarkerData(geno_url)
   logger$log("Load data DONE")
 
   # COMPUTE LD
