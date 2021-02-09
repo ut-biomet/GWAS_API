@@ -45,8 +45,8 @@ test_that("POST /gwas", {
     test = "lrt", # (lrt, Wald or score)
     phenoDataId = "testPhenoData01",
     markerDataId = "testMarkerData01",
-    tresh.callrate = "0.9",
-    tresh.maf = 0.06
+    thresh_callrate = "0.9",
+    thresh_maf = 0.06
   )
 
 
