@@ -163,12 +163,13 @@ loadModel <- function(modelS3Path){
   download.file(modelS3Path, localFile)
 
   logger$log("Read model file ... ")
-  gwa <- readLines(localFile)
+  gwasRes <- readLines(localFile)
   logger$log("Read model file DONE ")
   logger$log("Convert Json to data.frame ... ")
-  gwa <- data.frame(fromJSON(gwa))
+  gwasRes <- fromJSON(gwasRes)
+  gwasRes$gwas <- as.data.frame(gwasRes$gwas)
   logger$log("Convert Json to data.frame DONE ")
 
   logger$log("DONE, return output.")
-  gwa
+  gwasRes
 }

@@ -139,6 +139,7 @@ function(res,
          fixed = 0,
          thresh_maf = 0.05,
          thresh_callrate = 0.9){
+
   logger <- logger$new("/gwas")
   # save call time.
   callTime <- Sys.time()
@@ -224,7 +225,27 @@ function(res,
   logger$log(time = FALSE, context = FALSE,
              "modelId: ", modelId)
 
-  # Upload model
+
+  # save model information
+
+  logger$log("Save model information ...")
+  out$modelInfo <- list(
+    modelId = modelId,
+    upload_url = upload_url,
+    creationTime = callTime,
+    geno_url = geno_url,
+    pheno_url = pheno_url,
+    trait = trait,
+    test = test,
+    fixed = as.character(fixed),
+    thresh_maf = as.character(thresh_maf),
+    thresh_callrate = as.character(thresh_callrate),
+    modelRobjectMD5 = digest(model)
+  )
+  logger$log("Save model information DONE")
+
+
+  ### UPLOAD model
   logger$log("Upload model ...:")
   logger$log("Save model in tmp dir...")
 
@@ -232,13 +253,16 @@ function(res,
                         tmpdir = tempdir(),
                         fileext = ".json")
 
-  writeLines(toJSON(model), con = localFile)
+  writeLines(toJSON(list(gwas = model,
+                         info = out$modelInfo)),
+             con = localFile)
 
   logger$log("Make PUT request to AWS S3 ...")
   putResult <- PUT(url = upload_url,
                    body = upload_file(localFile, type = ""))
   if (putResult$status_code != 200) {
-    logger$log("Error, PUT request's satus code is different than 200: ", putResult$status)
+    logger$log("Error, PUT request's satus code is different than 200: ",
+               putResult$status)
     res$status <- putResult$status_code
     out <- as_list(content(putResult))
     out$GWAS_API_error <- "error PUT request didn't get status code 200"
@@ -254,25 +278,6 @@ function(res,
   # see : https://docs.google.com/document/d/1gaTazFm_a6klD9krZPKGHc5x_D-SWL8K93M6dwsTiLE/edit
   # write models's information in a database
   # so that endpoints to check already fitted model can be created
-
-  # save model information
-  logger$log("Save model information ...")
-  out$modelInfo <- list(
-    modelId = modelId,
-    upload_url = upload_url,
-    creationTime = callTime,
-    geno_url = geno_url,
-    pheno_url = pheno_url,
-    trait = trait,
-    test = test,
-    fixed = as.character(fixed),
-    thresh_maf = as.character(thresh_maf),
-    thresh_callrate = as.character(thresh_callrate),
-    modelRobjectMD5 = digest(model),
-    modelFileMD5 = digest(file = localFile)
-  )
-  logger$log("Save model information DONE")
-
 
 
   ### RESPONSE
@@ -338,7 +343,9 @@ function(res, modelS3Path, adj_method, thresh_p = 0.05, chr = NA){
 
   # LOAD MODEL
   logger$log("load model ...")
-  gwa <- loadModel(modelS3Path)
+  gwasRes <- loadModel(modelS3Path)
+  gwa <- gwasRes$gwas
+  info <- gwasRes$info
   logger$log("load model DONE.")
 
   ### CHECK PARAMETERS 2
@@ -526,7 +533,9 @@ function(res, modelS3Path, adj_method, thresh_p = NA){
 
   # LOAD MODEL
   logger$log("Load model...")
-  gwa <- loadModel(modelS3Path)
+  gwasRes <- loadModel(modelS3Path)
+  gwa <- gwasRes$gwas
+  info <- gwasRes$info
   logger$log("Load model DONE")
 
   # CREATE DATATABLE

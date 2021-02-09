@@ -41,11 +41,13 @@ manPlot <- function(gwa, adj_method, thresh_p = 0.05, chr = NA){
   significantSNP <- gwa[gwa$p_adj <= thresh_p, "id"]
 
   p <- manhattanly(
-    data.frame(CHR = gwa$chr,
+    data.frame(CHR = as.numeric(factor(gwa$chr,
+                                       levels = unique(gwa$chr))),
                BP = gwa$pos,
                SNP = gwa$id,
                P = gwa$p),
     snp = "SNP",
+    labelChr = unique(gwa$chr),
     highlight = significantSNP,
     genomewideline = -log10(thresh_pAdj),
     suggestiveline = FALSE
