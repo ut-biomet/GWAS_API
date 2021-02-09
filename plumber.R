@@ -378,7 +378,8 @@ function(res, modelS3Path, adj_method, thresh_p = 0.05, chr = NA){
   p <- manPlot(gwa = gwa,
                adj_method = adj_method,
                thresh_p = thresh_p,
-               chr = chr)
+               chr = chr,
+               title = info$trait)
   logger$log("Create plot DONE")
   logger$log("Create response ... ")
   res$status <- 200 # status for good GET response

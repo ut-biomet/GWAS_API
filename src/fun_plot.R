@@ -4,9 +4,15 @@
 #' @param adj_method adjustment method, see p.adjust
 #' @param thresh_p significant threshold (default 0.05)
 #' @param chr [char] filter to show only some chromosomes (show all if NA)
+#' @param title [char] Title of the plot. Default is "Manhattan Plot"
 #'
 #' @return plotly graph
-manPlot <- function(gwa, adj_method, thresh_p = 0.05, chr = NA){
+manPlot <- function(gwa,
+                    adj_method,
+                    thresh_p = 0.05,
+                    chr = NA,
+                    title = "Manhattan Plot") {
+
   logger <- logger$new("r-manPlot()")
 
   # P-Values adjustment
@@ -50,7 +56,8 @@ manPlot <- function(gwa, adj_method, thresh_p = 0.05, chr = NA){
     labelChr = unique(gwa$chr),
     highlight = significantSNP,
     genomewideline = -log10(thresh_pAdj),
-    suggestiveline = FALSE
+    suggestiveline = FALSE,
+    title = title
   )
   p
 }
