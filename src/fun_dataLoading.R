@@ -34,7 +34,9 @@ getMarkerData <- function(dtaS3Path) {
   # read data file:
   logger$log("Read markers file ... ")
   dta <- tryCatch({
-    dta <- read.vcf(localFile, verbose = FALSE)
+    dta <- read.vcf(localFile,
+                    verbose = TRUE,
+                    convert.chr = FALSE)
     logger$log("Read markers file DONE ")
     dta
   }, error = function(err) {
