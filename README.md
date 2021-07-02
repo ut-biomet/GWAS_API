@@ -30,11 +30,17 @@ docker exec -u 0 -it gwasapi bash
 
 ## Tests
 
-To test the API, first launch a local instance of the API on port `8181`. This can be done through several ways, for example in R run:
+To test the API, first launch a local instance of the API on port `8181`. This can be done through several ways, for example in `R` run:
 
 ```R
 library(plumber)
 plumber::plumb('plumber.R')$run(port = 8181)
+```
+
+Or you can run the Docker container (mapping the API on the port `8181`):
+
+```sh
+docker run -d --rm --name gwasapi -p 8181:8080 utbiomet/gwasapi
 ```
 
 Then run the script `tests/testthat.R`:

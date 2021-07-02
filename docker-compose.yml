@@ -1,0 +1,17 @@
+version: '3.7'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gwas-api
+    restart: always
+    ports:
+      - 8080:8080
+    networks:
+      - gs-network
+
+networks:
+  gs-network:
+    external: true

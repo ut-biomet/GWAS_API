@@ -10,39 +10,62 @@
 #    https://www.rplumber.io/
 #
 
+
+##### API description #####
+#* @apiTitle GWAS API
+#* @apiDescription API for GWAS models fitting and use
+#* @apiVersion 0.0.1
+#* @apiContact @email juliendiot@ut-biomet.org
+#* @apiTag Utils Endpoints for checking the API
+#* @apiTag Models Endpoints related to model managements
+#* @apiTag Plots Endpoints related to plots drawn from a GWAS model
+#* @apiTag Data Endpoints related to model data
+
+cat(as.character(Sys.time()), "-",
+    "Start Plumber API using 'plumber v'", as.character(packageVersion("plumber")), "\n")
+
 # required packages
 library(plumber)
-library(digest)
+library(digest) # for MD5 sum calculation
 library(DT)
 library(gaston) # for many functions
+library(httr) # make HTTP requests
+library(xml2) # manage xml format
+library(rjson) # manage json format
+library(R6) # R6 objects
+library(manhattanly) # manhattan plot using plotly
+library(redux) # manage redis
+stopifnot("git2r" %in% rownames(installed.packages()))
 
-#* @apiTitle GWAS API
-#* @apiDescription First test for GWAS API
-
-# api <- plumber::plumb('plumber.R')
-# api$run(port = 8080, host = '0.0.0.0', swagger = TRUE)
 
 # load API's functions
-sapply(list.files("functions",
+sapply(list.files("src",
                   pattern = "\\.R$", # all files ending by ".R"
                   full.names = TRUE),
        source)
 
-# create models folder
-if (!dir.exists("data/models")) {
-  dir.create("data/models", mode = "0664")
-}
+# create initialization logger
+initLog <- logger$new("GWAS-API-INIT")
 
+# connect to redis
+initLog$log("Connexion to redis server ...")
+REDIS <<- connectRedis()
+initLog$log("Connexion to redis server DONE")
 
+# send initialization message to redis
+initLog$log("GWAS_API started",
+            redis = TRUE,
+            status = "DONE")
 
+rm("initLog")
 ##################################### Filter ###################################
 
 #* Log some information about the incoming requests
 #* @filter logger
 function(req){
-  cat(as.character(Sys.time()), "-",
-      req$REQUEST_METHOD, req$PATH_INFO, "-",
-      req$HTTP_USER_AGENT, "@", req$REMOTE_ADDR, "\n")
+  logger <- logger$new("GWAS-API-REQUESTS")
+  logger$log(req$REQUEST_METHOD, req$PATH_INFO, "-",
+             req$HTTP_USER_AGENT, "@", req$REMOTE_ADDR)
   plumber::forward()
 }
 
@@ -51,476 +74,491 @@ function(req){
 
 ################################### Endpoints ##################################
 
+##### Utils #####
+
 #* Echo back the input
+#* @tag utils
 #* @param msg The message to echo
 #* @serializer unboxedJSON
 #* @get /echo
 function(msg=""){
-  cat(as.character(Sys.time()), "-",
-      "/echo: call with parameters parameters:\n")
-  cat("\t msg: ", msg,"\n")
+  logger <- logger$new("/echo")
+  logger$log("call with parameters:")
+  logger$log("msg: ", msg,
+             time = FALSE, context = FALSE)
   list(msg = paste0("The message is: '", msg, "'"))
 }
 
 
+#* give information about current API version
+#* @tag utils
+#* @serializer unboxedJSON
+#* @get /version
+function(){
+  logger <- logger$new("/version")
+  logger$log("call with no parameters")
+  out <- list()
 
+  if (dir.exists(".git")) {
+    logger$log("extract last commit informations")
+    out$lastCommit <- as.data.frame(git2r::last_commit(), "data.frame")
+  } else {
+    logger$log("git repository not found")
+    out$lastCommit <- NA
+  }
+
+  logger$log("calculate MD5 sum of all the '.R' files")
+  apiRfiles <- dir(all.files = T, pattern = ".R$", recursive = T)
+  allFP <- sapply(apiRfiles, function(f){digest(file = f)})
+  out$RfilesFingerPrint <- digest(allFP)
+  logger$log("END")
+  return(out)
+}
 
 
 
 ##### GWAS #####
 #* Fit a GWAS model (type 2)
-#* @tag Model fitting GWAS
-#* @param markerDataId id of the genetic data
-#* @param phenoDataId id of the phenotypic data
+#* @tag Models
+#* @param geno_url url of the markers data file (.vcf.gz file)
+#* @param pheno_url url of the phenotypic data file (csv file)
+#* @param upload_url url of the put request for saving the model
 #* @param trait The trait to be analyzed
 #* @param test The testing method (lrt, Wald or score)
 #* @param fixed The option chosen for fixed effect (number of PC, or none (0))
-#* @param tresh.maf keep markers with a MAF > tresh.maf
-#* @param tresh.callrate keep markers with a callrate > tresh.callrate
+#* @param thresh_maf keep markers with a MAF > thresh_maf
+#* @param thresh_callrate keep markers with a callrate > thresh_callrate
 #* @serializer unboxedJSON
 #* @post /gwas
 function(res,
-         markerDataId,
-         phenoDataId,
+         geno_url,
+         pheno_url,
+         upload_url,
          trait,
          test,
          fixed = 0,
-         tresh.maf = 0.05,
-         tresh.callrate = 0.9){
+         thresh_maf = 0.05,
+         thresh_callrate = 0.9){
+
+  logger <- logger$new("/gwas")
   # save call time.
   callTime <- Sys.time()
   out <- list(
     inputParams = list(
-      markerDataId = markerDataId,
-      phenoDataId = phenoDataId,
+      geno_url = geno_url,
+      pheno_url = pheno_url,
+      upload_url = upload_url,
       trait = trait,
       test = test,
       fixed = as.character(fixed),
-      tresh.maf = as.character(tresh.maf),
-      tresh.callrate = as.character(tresh.callrate)
+      thresh_maf = as.character(thresh_maf),
+      thresh_callrate = as.character(thresh_callrate)
     )
   )
-  # TODO ask Shuei if it is nessesary to specify that parameters used default values (for fixed, tresh.maf, tresh.callrate)
+  # TODO ask Shuei if it is nessesary to specify that parameters used default values (for fixed, thresh_maf, thresh_callrate)
 
-  cat(as.character(Sys.time()), "-",
-      "/gwas: call with parameters parameters:\n")
-  cat(
-    "\t markerDataId: ", markerDataId,"\n",
-    "\t phenoDataId: ", phenoDataId, "\n",
+  logger$log("call with parameters:")
+  logger$log(time = FALSE, context = FALSE,
+    "geno_url: ", geno_url,"\n",
+    "\t pheno_url: ", pheno_url, "\n",
     "\t trait: ", trait, "\n",
     "\t test: ", test, "\n",
     "\t fixed: ", fixed, "\n",
-    "\t tresh.maf: ", tresh.maf, "\n",
-    "\t tresh.callrate: ", tresh.callrate, "\n"
-  )
+    "\t thresh_maf: ", thresh_maf, "\n",
+    "\t thresh_callrate: ", thresh_callrate)
 
 
   ### CHECK PARAMETERS
   # Convert to numeric
   options(warn = -1) # disable warnings. for "as.numeric" with character
-  cat(as.character(Sys.time()), "-",
-      "/gwas: Convert numeric parameters...\n")
+  logger$log("Convert numeric parameters...")
   if (!is.na(as.numeric(fixed))) {
     fixed <- as.numeric(fixed)
   } else {
-    cat(as.character(Sys.time()), "-",
-        '/gwas: Error: "fixed" cannot be converted to numeric.\n')
+    logger$log('Error: "fixed" cannot be converted to numeric.')
     res$status <- 400 # bad request
     out$error <- '"fixed" should be a numeric value.'
-    cat(as.character(Sys.time()), "-",
-        '/gwas: Exit with error code 400\n')
-    cat(as.character(Sys.time()), "-",
-        "/gwas: END \n")
+    logger$log('Exit with error code 400')
+    logger$log("END")
     return(out)
   }
 
-  if (!is.na(as.numeric(tresh.maf))) {
-    tresh.maf <- as.numeric(tresh.maf)
+  if (!is.na(as.numeric(thresh_maf))) {
+    thresh_maf <- as.numeric(thresh_maf)
   } else {
-    cat(as.character(Sys.time()), "-",
-        '/gwas: Error: "tresh.maf" cannot be converted to numeric.\n')
+    logger$log('Error: "thresh_maf" cannot be converted to numeric.')
     res$status <- 400 # bad request
-    out$error <- '"tresh.maf" should be a numeric value.'
-    cat(as.character(Sys.time()), "-",
-        '/gwas: Exit with error code 400\n')
-    cat(as.character(Sys.time()), "-",
-        "/gwas: END \n")
+    out$error <- '"thresh_maf" should be a numeric value.'
+    logger$log('Exit with error code 400')
+    logger$log("END")
     return(out)
   }
 
-  if (!is.na(as.numeric(tresh.callrate))) {
-    tresh.callrate <- as.numeric(tresh.callrate)
+  if (!is.na(as.numeric(thresh_callrate))) {
+    thresh_callrate <- as.numeric(thresh_callrate)
   } else {
-    cat(as.character(Sys.time()), "-",
-        '/gwas: Error: "tresh.callrate" cannot be converted to numeric.\n')
+    logger$log('Error: "thresh_callrate" cannot be converted to numeric.')
     res$status <- 400 # bad request
-    out$error <- '"tresh.callrate" should be a numeric value.'
-    cat(as.character(Sys.time()), "-",
-        '/gwas: Exit with error code 400\n')
-    cat(as.character(Sys.time()), "-",
-        "/gwas: END \n")
+    out$error <- '"thresh_callrate" should be a numeric value.'
+    logger$log('Exit with error code 400')
+    logger$log("END")
     return(out)
   }
-  cat(as.character(Sys.time()), "-",
-      "/gwas: Convert numeric parameters DONE.\n")
+  logger$log("Convert numeric parameters DONE.")
   options(warn = 0) # enable warnings
 
 
   ### GET DATA
-  cat(as.character(Sys.time()), "-",
-      "/gwas: Load data...\n")
-  data <- loadData(markerDataId, phenoDataId)
-  cat(as.character(Sys.time()), "-",
-      "/gwas: Load data DONE.\n")
+  logger$log("Load data...")
+  data <- loadData(geno_url, pheno_url)
+  logger$log("Load data DONE.")
 
   ### GWAS
-  cat(as.character(Sys.time()), "-",
-      "/gwas: Generate Gwas model...\n")
+  logger$log("Generate Gwas model...")
   # calc model
-  model <- gwas(data, trait, test, fixed, tresh.maf, tresh.callrate)
+  model <- gwas(data, trait, test, fixed, thresh_maf, thresh_callrate)
   modelId <- gsub("\\.", "-",
-                  paste0("GWAS_",
-                         markerDataId, "_", phenoDataId, "_", trait,"_",
+                  paste0("GWAS-model_",
+                         "_", trait,"_",
                          as.numeric(callTime)))
-  cat(as.character(Sys.time()), "-",
-      "/gwas: Generate Gwas model DONE:\n")
-  cat(paste0("\t modelId: ", modelId,"\n"))
+  logger$log("Generate Gwas model DONE:")
+  logger$log(time = FALSE, context = FALSE,
+             "modelId: ", modelId)
 
-  # save model
-  cat(as.character(Sys.time()), "-",
-      "/gwas: Save model ... \n")
-  modPath <- paste0("data/models/", modelId, ".rds")
-  saveRDS(model, file = modPath)
-  cat(as.character(Sys.time()), "-",
-      "/gwas: Save model DONE: \n")
-  cat(paste0("\t path: ", modPath,"\n"))
+
+  # save model information
+
+  logger$log("Save model information ...")
+  out$modelInfo <- list(
+    modelId = modelId,
+    upload_url = upload_url,
+    creationTime = callTime,
+    geno_url = geno_url,
+    pheno_url = pheno_url,
+    trait = trait,
+    test = test,
+    fixed = as.character(fixed),
+    thresh_maf = as.character(thresh_maf),
+    thresh_callrate = as.character(thresh_callrate),
+    modelRobjectMD5 = digest(model)
+  )
+  logger$log("Save model information DONE")
+
+
+  ### UPLOAD model
+  logger$log("Upload model ...:")
+  logger$log("Save model in tmp dir...")
+
+  localFile <- tempfile(pattern = "GWAS-Results",
+                        tmpdir = tempdir(),
+                        fileext = ".json")
+
+  writeLines(toJSON(list(gwas = model,
+                         info = out$modelInfo)),
+             con = localFile)
+
+  logger$log("Make PUT request to AWS S3 ...")
+  putResult <- PUT(url = upload_url,
+                   body = upload_file(localFile, type = ""))
+  if (putResult$status_code != 200) {
+    logger$log("Error, PUT request's satus code is different than 200: ",
+               putResult$status)
+    res$status <- putResult$status_code
+    out <- as_list(content(putResult))
+    out$GWAS_API_error <- "error PUT request didn't get status code 200"
+    logger$log('Exit with error code ', putResult$status)
+    logger$log("END")
+    return(out)
+  }
+  logger$log("Upload model DONE:")
+  logger$log(time = FALSE, context = FALSE,
+             "putUrl: ", upload_url)
 
   # TODO:
   # see : https://docs.google.com/document/d/1gaTazFm_a6klD9krZPKGHc5x_D-SWL8K93M6dwsTiLE/edit
   # write models's information in a database
   # so that endpoints to check already fitted model can be created
 
-  # save model information
-  cat(as.character(Sys.time()), "-",
-      "/gwas: Save model information ... \n")
-  out$modelInfo <- list(
-    modelId = modelId,
-    locationPath = modPath,
-    creationTime = callTime,
-    markerDataId = markerDataId,
-    phenoDataId = phenoDataId,
-    trait = trait,
-    test = test,
-    fixed = as.character(fixed),
-    tresh.maf = as.character(tresh.maf),
-    tresh.callrate = as.character(tresh.callrate),
-    modelRobjectMD5 = digest(model),
-    modelFileMD5 = digest(file = modPath)
-  )
-  cat(as.character(Sys.time()), "-",
-      "/gwas: Save model information DONE \n")
-
-
 
   ### RESPONSE
-  cat(as.character(Sys.time()), "-",
-      "/gwas: Create response ... \n")
+  logger$log("Create response ...")
   res$status <- 201 # status for good post response
   out$message <- "Model created"
   out$modelId <- modelId
-  cat(as.character(Sys.time()), "-",
-      "/gwas: Create response DONE \n")
-  cat(as.character(Sys.time()), "-",
-      "/gwas: END \n")
+  logger$log("Create response DONE")
+  logger$log("END",
+             redis = TRUE,
+             status = "DONE",
+             action_type = "GWAS")
   out
 }
+
 
 
 ##### Plots #####
 
 #* Manhattan plot (type 2)
-#* @tag ManhattanPlot
-#* @param modelId GWAS model id
+#* @tag Plots
+#* @param modelS3Path url of the model data file (rds file)
 #* @param adj_method either bonferroni or FDR
-#* @param thresh.p
-#* @png
+#* @param thresh_p
+#* @param chr names of the chromosomes to show separated using comma. Show all chromosomes if nothing is specified.
+#* @serializer htmlwidget
 #* @get /manplot
-function(res, modelId, adj_method, thresh.p = 0.05){
+function(res, modelS3Path, adj_method, thresh_p = 0.05, chr = NA){
   # # save call time.
   # callTime <- Sys.time()
-
+  logger <- logger$new("/manplot")
   out <- list(
     inputParams = list(
-      modelId = modelId,
+      modelS3Path = modelS3Path,
       adj_method = adj_method,
-      thresh.p = as.character(thresh.p)
+      thresh_p = as.character(thresh_p),
+      chr = chr
     )
   )
 
-  cat(as.character(Sys.time()), "-",
-      "/manplot: call with parameters parameters:\n")
-  cat(
-    "\t modelId: ", modelId,"\n",
+  logger$log("call with parameters:")
+  logger$log(time = FALSE, context = FALSE,
+    "modelS3Path: ", modelS3Path,"\n",
     "\t adj_method: ", adj_method, "\n",
-    "\t thresh.p: ", thresh.p, "\n"
-  )
+    "\t thresh_p: ", thresh_p, "\n",
+    "\t chr: ", chr)
 
 
   ### CHECK PARAMETERS
   # Convert to numeric
-  cat(as.character(Sys.time()), "-",
-      "/manplot: Convert numeric parameters...\n")
-  if (!is.na(as.numeric(thresh.p))) {
-    thresh.p <- as.numeric(thresh.p)
+  logger$log("Convert numeric parameters...")
+  if (!is.na(as.numeric(thresh_p))) {
+    thresh_p <- as.numeric(thresh_p)
   } else {
-    cat(as.character(Sys.time()), "-",
-        '/manplot: Error: "thresh.p" cannot be converted to numeric.\n')
+    logger$log('Error: "thresh_p" cannot be converted to numeric.')
     res$status <- 400 # bad request
-    out$error <- '"thresh.p" should be a numeric value.'
-    cat(as.character(Sys.time()), "-",
-        '/manplot: Exit with error code 400\n')
-    cat(as.character(Sys.time()), "-",
-        "/manplot: END \n")
+    out$error <- '"thresh_p" should be a numeric value.'
+    logger$log('Exit with error code 400')
+    logger$log("END")
     return(out)
   }
-  cat(as.character(Sys.time()), "-",
-      "/manplot: Convert numeric parameters DONE.\n")
+  logger$log("Convert numeric parameters DONE.")
 
   # LOAD MODEL
-  cat(as.character(Sys.time()), "-",
-      "/manplot: load model ...\n")
-  gwa <- readRDS(paste0("data/models/", modelId, ".rds"))
-  # can also be done in an external function: gwa <- loadModel(modelId)
-  cat(as.character(Sys.time()), "-",
-      "/manplot: load model DONE.\n")
+  logger$log("load model ...")
+  gwasRes <- loadModel(modelS3Path)
+  gwa <- gwasRes$gwas
+  info <- gwasRes$info
+  logger$log("load model DONE.")
+
+  ### CHECK PARAMETERS 2
+  logger$log('Check "chr" parameter ...')
+  if (!is.na(chr)) {
+    # extract chr names
+    chr <- strsplit(chr, ",")[[1]]
+    if (!all(chr %in% as.character(unique(gwa$chr)))) {
+      logger$log('Warning: "chr" is not valid, chromosomes\'names specified are not in the data.')
+      logger$log(time = FALSE, context = FALSE,
+                 '"chr" is:', chr, "\n",
+                 '"gwa$chr" is: ', as.character(unique(gwa$chr)))
+      logger$log(time = FALSE, context = FALSE,
+                 'mismatch will be deleted')
+      chr <- chr[chr %in% as.character(unique(gwa$chr))]
+      if (length(chr) == 0) {
+        chr <- NA
+      }
+    } else {
+      logger$log(time = FALSE, context = FALSE,
+                       '"chr" is good')
+    }
+  }
+  logger$log('Check "chr" parameter DONE')
+
+
 
   # CREATE PLOT
-  cat(as.character(Sys.time()), "-",
-      "/manplot: Adjust p-values ...\n")
-  p.adj <- p.adjust(gwa$p, method = adj_method)
-  cat(as.character(Sys.time()), "-",
-      "/manplot: Adjust p-values DONE\n")
-
-  col <- rep("black", nrow(gwa))
-  col[gwa$chr %% 2 == 0] <- "gray50"
-  col[p.adj < thresh.p] <- "green"
-  cat(as.character(Sys.time()), "-",
-      "/manplot: Create plot ...\n")
-  p <- manhattan(gwa, pch = 20, col = col,
-                 main = "TO DO trait name", # extract trait name from database
-            sub = modelId)
-  cat(as.character(Sys.time()), "-",
-      "/manplot: Create plot DONE\n")
-  cat(as.character(Sys.time()), "-",
-      "/manplot: Create response ... \n")
+  logger$log("Create plot ...")
+  p <- manPlot(gwa = gwa,
+               adj_method = adj_method,
+               thresh_p = thresh_p,
+               chr = chr,
+               title = info$trait)
+  logger$log("Create plot DONE")
+  logger$log("Create response ... ")
   res$status <- 200 # status for good GET response
-  cat(as.character(Sys.time()), "-",
-      "/manplot: Create response DONE \n")
-  cat(as.character(Sys.time()), "-",
-      "/manplot: END \n")
+  logger$log("Create response DONE ")
+  logger$log("END",
+             redis = TRUE,
+             status = "DONE",
+             action_type = "MANHANTTAN_PLOT")
   p
 }
 
 
 
 #* LD plot
-#* @tag LDPlot
-#* @param markerDataId
+#* @tag Plots
+#* @param geno_url url of the markers data file (.vcf.gz file)
 #* @param from (total number of SNP should be < 50)
 #* @param to (total number of SNP should be < 50)
-#* @png
+#* @serializer png
 #* @get /LDplot
-function(res, markerDataId, from, to){
-
+function(res, geno_url, from, to){
+  logger <- logger$new("/LDplot")
   out <- list(
     inputParams = list(
-      markerDataId = markerDataId,
+      geno_url = geno_url,
       from = from,
       to = to
     )
   )
 
-  cat(as.character(Sys.time()), "-",
-      "/LDplot: call with parameters parameters:\n")
-  cat(
-    "\t markerDataId: ", markerDataId,"\n",
+  logger$log("call with parameters:")
+  logger$log(time=FALSE, context=FALSE,
+    "geno_url: ", geno_url,"\n",
     "\t from: ", from, "\n",
-    "\t to: ", to, "\n"
-  )
+    "\t to: ", to)
 
   ### CHECK PARAMETERS
   # Convert to numeric
-  cat(as.character(Sys.time()), "-",
-      "/LDplot: Convert numeric parameters...\n")
+  logger$log("Convert numeric parameters...")
   if (!is.na(as.numeric(from))) {
     from <- as.numeric(from)
   } else {
-    cat(as.character(Sys.time()), "-",
-        '/LDplot: Error: "from" cannot be converted to numeric.\n')
+    logger$log('Error: "from" cannot be converted to numeric.')
     res$status <- 400 # bad request
     out$error <- '"from" should be a numeric value.'
-    cat(as.character(Sys.time()), "-",
-        '/LDplot: Exit with error code 400\n')
-    cat(as.character(Sys.time()), "-",
-        "/LDplot: END \n")
+    logger$log('Exit with error code 400')
+    logger$log("END")
     return(out)
   }
 
-  cat(as.character(Sys.time()), "-",
-      "/LDplot: Convert numeric parameters...\n")
+  logger$log("Convert numeric parameters...")
   if (!is.na(as.numeric(to))) {
     to <- as.numeric(to)
   } else {
-    cat(as.character(Sys.time()), "-",
-        '/LDplot: Error: "to" cannot be converted to numeric.\n')
+    logger$log('Error: "to" cannot be converted to numeric.')
     res$status <- 400 # bad request
     out$error <- '"to" should be a numeric value.'
-    cat(as.character(Sys.time()), "-",
-        '/LDplot: Exit with error code 400\n')
-    cat(as.character(Sys.time()), "-",
-        "/LDplot: END \n")
+    logger$log('Exit with error code 400')
+    logger$log("END")
     return(out)
   }
-  cat(as.character(Sys.time()), "-",
-      "/LDplot: Convert numeric parameters DONE.\n")
+  logger$log("Convert numeric parameters DONE.")
 
 
-  cat(as.character(Sys.time()), "-",
-      '/LDplot: Check "from" < "to"...\n')
+  logger$log('Check "from" < "to"...')
   if (from >= to) {
-    cat(as.character(Sys.time()), "-",
-        '/LDplot: Error: "from" greater than "to".\n')
+    logger$log('Error: "from" greater than "to".')
     res$status <- 400 # bad request
     out$error <- '"from" should be inferior than "to".'
-    cat(as.character(Sys.time()), "-",
-        '/LDplot: Exit with error code 400\n')
-    cat(as.character(Sys.time()), "-",
-        "/LDplot: END \n")
+    logger$log('Exit with error code 400')
+    logger$log("END")
     return(out)
   }
-  cat(as.character(Sys.time()), "-",
-      '/LDplot: Check "from" < "to" DONE\n')
+  logger$log('Check "from" < "to" DONE')
 
 
-  cat(as.character(Sys.time()), "-",
-      '/LDplot: Check number of SNP < 50...\n')
+  logger$log('Check number of SNP < 50...')
   if (to - from > 50) {
-    cat(as.character(Sys.time()), "-",
-        '/LDplot: Error: number of SNP is > 50.\n')
+    logger$log('Error: number of SNP is > 50.')
     res$status <- 400 # bad request
     out$error <- 'number of SNP should be < 50'
-    cat(as.character(Sys.time()), "-",
-        '/LDplot: Exit with error code 400\n')
-    cat(as.character(Sys.time()), "-",
-        "/LDplot: END \n")
+    logger$log('Exit with error code 400')
+    logger$log("END")
     return(out)
   }
-  cat(as.character(Sys.time()), "-",
-      '/LDplot: Check number of SNP < 50 DONE\n')
+  logger$log('Check number of SNP < 50 DONE')
 
 
   ### GET DATA
-  cat(as.character(Sys.time()), "-",
-      "/LDplot: Load data...\n")
-  bm.wom <- getMarkerData(markerDataId)
-  cat(as.character(Sys.time()), "-",
-      "/LDplot: Load data DONE\n")
+  logger$log("Load data...")
+  bm.wom <- getMarkerData(geno_url)
+  logger$log("Load data DONE")
 
   # COMPUTE LD
-  cat(as.character(Sys.time()), "-",
-      "/LDplot: Compute LD ...\n")
+  logger$log("Compute LD ...")
   ld <- LD(bm.wom, c(from, to), measure = "r2")
-  cat(as.character(Sys.time()), "-",
-      "/LDplot: Compute LD DONE\n")
+  logger$log("Compute LD DONE")
 
-  cat(as.character(Sys.time()), "-",
-      "/LDplot: Create LD plot ...\n")
+  logger$log("Create LD plot ...")
   p <- LD.plot(ld, snp.positions = bm.wom@snps$pos[from:to])
-  cat(as.character(Sys.time()), "-",
-      "/LDplot: Create LD plot DONE\n")
+  logger$log("Create LD plot DONE")
 
-  cat(as.character(Sys.time()), "-",
-      "/LDplot: Create response ... \n")
+  logger$log("Create response ... ")
   res$status <- 200 # status for good GET response
-  cat(as.character(Sys.time()), "-",
-      "/LDplot: Create response DONE \n")
-  cat(as.character(Sys.time()), "-",
-      "/LDplot: END \n")
+  logger$log("Create response DONE ")
+  logger$log("END",
+             redis = TRUE,
+             status = "DONE",
+             action_type = "LD_PLOT")
   p
 }
 
 ##### Tables output #####
 
 #* Table of selected SNPs
-#* @tag SNP Table
-#* @param modelId GWAS model id
+#* @tag Data
+#* @param modelS3Path url of the model data file (rds file)
 #* @param adj_method either bonferroni or FDR
-#* @param thresh.p
+#* @param thresh_p threshold for p values. If not specify return all values
 #* @serializer unboxedJSON
 #* @get /datatable
-function(res, modelId, adj_method, thresh.p = 0.05){
-
+function(res, modelS3Path, adj_method, thresh_p = NA){
+  logger <- logger$new("/datatable")
   out <- list(
     inputParams = list(
-      modelId = modelId,
+      modelS3Path = modelS3Path,
       adj_method = adj_method,
-      thresh.p = as.character(thresh.p)
+      thresh_p = as.character(thresh_p)
     )
   )
 
-  cat(as.character(Sys.time()), "-",
-      "/datatable: call with parameters parameters:\n")
-  cat(
-    "\t modelId: ", modelId,"\n",
+  logger$log("call with parameters:")
+  logger$log(time = FALSE, context = FALSE,
+    "modelS3Path: ", modelS3Path,"\n",
     "\t adj_method: ", adj_method, "\n",
-    "\t thresh.p: ", thresh.p, "\n"
-  )
+    "\t thresh_p: ", thresh_p)
 
 
   ### CHECK PARAMETERS
   # Convert to numeric
-  cat(as.character(Sys.time()), "-",
-      "/datatable: Convert numeric parameters...\n")
-  if (!is.na(as.numeric(thresh.p))) {
-    thresh.p <- as.numeric(thresh.p)
+  logger$log("Convert numeric parameters...")
+  if (!is.na(as.numeric(thresh_p)) | is.na(thresh_p)) {
+    thresh_p <- as.numeric(thresh_p)
   } else {
-    cat(as.character(Sys.time()), "-",
-        '/datatable: Error: "thresh.p" cannot be converted to numeric.\n')
+    logger$log('Error: "thresh_p" cannot be converted to numeric.')
     res$status <- 400 # bad request
-    out$error <- '"thresh.p" should be a numeric value.'
+    out$error <- '"thresh_p" should be a numeric value.'
     return(out)
   }
-  cat(as.character(Sys.time()), "-",
-      "/datatable: Convert numeric parameters DONE.\n")
+  logger$log("Convert numeric parameters DONE.")
 
 
   # LOAD MODEL
-  cat(as.character(Sys.time()), "-",
-      "/datatable: Load model...\n")
-  gwa <- readRDS(paste0("data/models/", modelId, ".rds"))
-  # can also be done in an external function: gwa <- loadModel(modelId)
-  cat(as.character(Sys.time()), "-",
-      "/datatable: Load model DONE\n")
+  logger$log("Load model...")
+  gwasRes <- loadModel(modelS3Path)
+  gwa <- gwasRes$gwas
+  info <- gwasRes$info
+  logger$log("Load model DONE")
 
   # CREATE DATATABLE
-  cat(as.character(Sys.time()), "-",
-      "/datatable: Adjust p-values ...\n")
+  logger$log("Adjust p-values ...")
   p.adj <- p.adjust(gwa$p, method = adj_method)
-  cat(as.character(Sys.time()), "-",
-      "/datatable: Adjust p-values DONE\n")
+  logger$log("Adjust p-values DONE")
 
   ### RESPONSE
-  cat(as.character(Sys.time()), "-",
-      "/datatable: Create response ... \n")
+  logger$log("Create response ... ")
   res$status <- 200 # status for good GET response
-  out$data <- gwa[p.adj < thresh.p, ]
-  # datatable(gwa[p.adj < thresh.p, ])
-  cat(as.character(Sys.time()), "-",
-      "/datatable: Create response DONE \n")
-  cat(as.character(Sys.time()), "-",
-      "/datatable: END \n")
+  if (is.na(thresh_p)) {
+    out$data <- gwa
+  } else {
+    out$data <- gwa[p.adj < thresh_p, ]
+  }
+
+  # datatable(gwa[p.adj < thresh_p, ])
+  logger$log("Create response DONE ")
+  logger$log("END",
+             redis = TRUE,
+             status = "DONE",
+             action_type = "GWAS_RESULTS")
   out
 
 }
-
-# sel=gt.score[,colnames(gt.score)%in% gwa[p.adj < thresh.p, "id"]]

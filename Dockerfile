@@ -1,4 +1,4 @@
-FROM trestletech/plumber
+FROM rstudio/plumber
 LABEL maintainer="Julien Diot <juliendiot@ut-biomet.org>"
 
 EXPOSE 8080
@@ -11,7 +11,8 @@ RUN apt-get update --allow-releaseinfo-change && apt-get install -y \
     libcurl4-openssl-dev \
     libxml2-dev \
     curl \
-    pandoc
+    pandoc \
+    libhiredis-dev
 
 # set and check R package repository
 RUN SNAPSHOT="https://cran.microsoft.com/snapshot/2020-03-17/" && \
@@ -19,7 +20,7 @@ RUN SNAPSHOT="https://cran.microsoft.com/snapshot/2020-03-17/" && \
     touch /.Rprofile && \
     echo "options(repos = c(CRAN = '$SNAPSHOT'))" >> ~/.Rprofile
 
-RUN R -e "install.packages(c('BGLR', 'digest', 'DT', 'gaston', 'httr', 'magick'), quiet = TRUE)"
+RUN R -e "install.packages(c('BGLR', 'digest', 'DT', 'gaston', 'httr', 'magick', 'git2r', 'xml2', 'httr', 'rjson', 'manhattanly', 'redux'), quiet = FALSE)"
 RUN rm ~/.Rprofile
 
 
@@ -38,4 +39,4 @@ RUN chmod -R 774 /GWAS_API
 USER plumber
 
 ENTRYPOINT []
-CMD R -e "setwd('/GWAS_API'); api <- plumber::plumb('/GWAS_API/plumber.R'); api\$run(port = 8080, host = '0.0.0.0', swagger = TRUE)"
+CMD R -e "setwd('/GWAS_API'); api <- plumber::plumb('/GWAS_API/plumber.R'); api\$run(port = 8080, host = '0.0.0.0')"
