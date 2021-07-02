@@ -1,0 +1,3 @@
+[submodule "GWAS-Engine"]
+	path = GWAS-Engine
+	url = git@github.com:ut-biomet/GWAS-Engine.git
