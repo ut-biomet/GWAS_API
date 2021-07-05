@@ -17,9 +17,8 @@
 #* @apiVersion 0.0.1
 #* @apiContact @email juliendiot@ut-biomet.org
 #* @apiTag Utils Endpoints for checking the API
-#* @apiTag Models Endpoints related to model managements
+#* @apiTag GWAS Endpoints related to gwas analysis
 #* @apiTag Plots Endpoints related to plots drawn from a GWAS model
-#* @apiTag Data Endpoints related to model data
 
 cat(as.character(Sys.time()), "-",
     "Start Plumber API using 'plumber v'", as.character(packageVersion("plumber")), "\n")
@@ -77,7 +76,7 @@ function(req){
 ##### Utils #####
 
 #* Echo back the input
-#* @tag utils
+#* @tag Utils
 #* @param msg The message to echo
 #* @serializer unboxedJSON
 #* @get /echo
@@ -91,7 +90,7 @@ function(msg=""){
 
 
 #* give information about current API version
-#* @tag utils
+#* @tag Utils
 #* @serializer unboxedJSON
 #* @get /version
 function(){
@@ -118,14 +117,15 @@ function(){
 
 
 ##### GWAS #####
-#* Fit a GWAS model
-#* @tag Models
+#* Fit a GWAS model. This endpoint take Urls of geno and pheno data (and values of other GWAS parameters) and write an a json file to the give Url using a PUT request. It had been disign to work with amazon S3 services.
+#* @tag GWAS
 #* @param geno_url url of the markers data file (.vcf.gz file)
 #* @param pheno_url url of the phenotypic data file (csv file)
 #* @param upload_url url of the PUT request for saving the model
 #* @param trait The trait name of the trait to analyzed, should be a column name of the phenotypic data.
 #* @param test Which test to use. Either `"score"`,  `"wald"` or `"lrt"`. For binary phenotypes, test = `"score"` is mandatory. For more information about this parameters see: documentation of the function `association.test` of the R package `gaston`
 #* @param fixed Number of Principal Components to include in the model with fixed effect (for test = `"wald"` or `"lrt"`). Default value is 0. For more information about this parameters see: documentation of the function `association.test` of the R package `gaston`.
+#* @param response Character of length 1, Either "quantitative" or "binary". Is the trait a quantitative or a binary phenotype? Default value is "quantitative".
 #* @param thresh_maf Threshold for filtering markers. Only markers with minor allele frequency > `thresh_maf` will be kept.
 #* @param thresh_callrate Threshold for filtering markers. Only markers with a callrate > `thresh_callrate` will be kept.
 #* @serializer unboxedJSON
@@ -299,10 +299,76 @@ browser()
 }
 
 
+##### adjusted Results #####
+
+#* Adjusted results. This endpoint calculate the adjusted p-values of the gwas analysis and return all the results or only the significant adjusted p-value. The results are return in json format.
+#* @tag GWAS
+#* @param modelUrl url of the result file saved by `/gwas` (json file)
+#* @param adj_method correction method: "holm", "hochberg", "bonferroni", "BH", "BY", "fdr", "none" (see R function `p.adjust`'s documentation for more details)
+#* @param thresh_p threshold for filtering non-significative markers. If not specify return all the values
+#* @serializer unboxedJSON
+#* @get /adjustedResults
+function(res, modelS3Path, adj_method, thresh_p = NA){
+  logger <- logger$new("/datatable")
+  out <- list(
+    inputParams = list(
+      modelS3Path = modelS3Path,
+      adj_method = adj_method,
+      thresh_p = as.character(thresh_p)
+    )
+  )
+
+  logger$log("call with parameters:")
+  logger$log(time = FALSE, context = FALSE,
+    "modelS3Path: ", modelS3Path,"\n",
+    "\t adj_method: ", adj_method, "\n",
+    "\t thresh_p: ", thresh_p)
+
+
+  ### CHECK PARAMETERS
+  # Convert to numeric
+  logger$log("Convert numeric parameters...")
+  if (!is.na(as.numeric(thresh_p)) | is.na(thresh_p)) {
+    thresh_p <- as.numeric(thresh_p)
+  } else {
+    logger$log('Error: "thresh_p" cannot be converted to numeric.')
+    res$status <- 400 # bad request
+    out$error <- '"thresh_p" should be a numeric value.'
+    return(out)
+  }
+  logger$log("Convert numeric parameters DONE.")
+
+
+  # CREATE DATATABLE
+  logger$log("Adjust p-values ...")
+  adj_gwas <- run_resAdjustment(gwasFile = NULL,
+                                gwasUrl = modelS3Path,
+                                adj_method = "bonferroni",
+                                dir = NULL)
+  dta <- jsonlite::fromJSON(adj_gwas$gwasAdjusted)
+  logger$log("Adjust p-values DONE")
+
+  ### RESPONSE
+  logger$log("Create response ... ")
+  res$status <- 200 # status for good GET response
+  if (is.na(thresh_p)) {
+    out$data <- dta
+  } else {
+    out$data <- dta[dta$p_adj <= thresh_p, ]
+  }
+
+  logger$log("Create response DONE ")
+  logger$log("END")#,
+             # redis = TRUE,
+             # status = "DONE",
+             # action_type = "GWAS_RESULTS")
+  out
+
+}
 
 ##### Plots #####
 
-#* Manhattan plot
+#* Draw a Manhattan plot. This endpoint return the html code of a plotly interactive graph.
 #* @tag Plots
 #* @param modelS3Path url of the model data file (rds file)
 #* @param adj_method correction method: "holm", "hochberg", "bonferroni", "BH", "BY", "fdr", "none" (see R function `p.adjust`'s documentation for more details)
@@ -368,11 +434,11 @@ function(res, modelS3Path, adj_method, thresh_p = 0.05, chr = NA){
 
 
 
-#* LD plot
+#* Draw a LD plot. This endpoint return a png image.
 #* @tag Plots
 #* @param geno_url url of the markers data file (.vcf.gz file)
-#* @param from (total number of SNP should be < 50)
-#* @param to (total number of SNP should be < 50)
+#* @param from lower bound of the range of SNPs for which the LD is computed. (`from` must be lower than `to`)
+#* @param to upper bound of the range of SNPs for which the LD is computed (the total number of SNP should be lower than 50)
 #* @serializer png
 #* @get /LDplot
 function(res, geno_url, from, to){
@@ -460,69 +526,3 @@ function(res, geno_url, from, to){
   # p
 }
 
-##### adjusted Results #####
-
-#* Table of selected SNPs
-#* @tag Data
-#* @param modelS3Path url of the model data file (rds file)
-#* @param adj_method correction method: "holm", "hochberg", "bonferroni", "BH", "BY", "fdr", "none" (see R function `p.adjust`'s documentation for more details)
-#* @param thresh_p threshold for filtering non-significative markers. If not specify return all the values
-#* @serializer unboxedJSON
-#* @get /adjustedResults
-function(res, modelS3Path, adj_method, thresh_p = NA){
-  logger <- logger$new("/datatable")
-  out <- list(
-    inputParams = list(
-      modelS3Path = modelS3Path,
-      adj_method = adj_method,
-      thresh_p = as.character(thresh_p)
-    )
-  )
-
-  logger$log("call with parameters:")
-  logger$log(time = FALSE, context = FALSE,
-    "modelS3Path: ", modelS3Path,"\n",
-    "\t adj_method: ", adj_method, "\n",
-    "\t thresh_p: ", thresh_p)
-
-
-  ### CHECK PARAMETERS
-  # Convert to numeric
-  logger$log("Convert numeric parameters...")
-  if (!is.na(as.numeric(thresh_p)) | is.na(thresh_p)) {
-    thresh_p <- as.numeric(thresh_p)
-  } else {
-    logger$log('Error: "thresh_p" cannot be converted to numeric.')
-    res$status <- 400 # bad request
-    out$error <- '"thresh_p" should be a numeric value.'
-    return(out)
-  }
-  logger$log("Convert numeric parameters DONE.")
-
-
-  # CREATE DATATABLE
-  logger$log("Adjust p-values ...")
-  adj_gwas <- run_resAdjustment(gwasFile = NULL,
-                                gwasUrl = modelS3Path,
-                                adj_method = "bonferroni",
-                                dir = NULL)
-  dta <- jsonlite::fromJSON(adj_gwas$gwasAdjusted)
-  logger$log("Adjust p-values DONE")
-
-  ### RESPONSE
-  logger$log("Create response ... ")
-  res$status <- 200 # status for good GET response
-  if (is.na(thresh_p)) {
-    out$data <- dta
-  } else {
-    out$data <- dta[dta$p_adj <= thresh_p, ]
-  }
-
-  logger$log("Create response DONE ")
-  logger$log("END")#,
-             # redis = TRUE,
-             # status = "DONE",
-             # action_type = "GWAS_RESULTS")
-  out
-
-}
