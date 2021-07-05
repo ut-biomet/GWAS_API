@@ -17,9 +17,8 @@
 #* @apiVersion 0.0.1
 #* @apiContact @email juliendiot@ut-biomet.org
 #* @apiTag Utils Endpoints for checking the API
-#* @apiTag Models Endpoints related to model managements
+#* @apiTag GWAS Endpoints related to gwas analysis
 #* @apiTag Plots Endpoints related to plots drawn from a GWAS model
-#* @apiTag Data Endpoints related to model data
 
 cat(as.character(Sys.time()), "-",
     "Start Plumber API using 'plumber v'", as.character(packageVersion("plumber")), "\n")
@@ -34,12 +33,12 @@ library(xml2) # manage xml format
 library(rjson) # manage json format
 library(R6) # R6 objects
 library(manhattanly) # manhattan plot using plotly
-library(redux) # manage redis
+# library(redux) # manage redis
 stopifnot("git2r" %in% rownames(installed.packages()))
 
 
 # load API's functions
-sapply(list.files("src",
+sapply(list.files("GWAS-Engine/src/",
                   pattern = "\\.R$", # all files ending by ".R"
                   full.names = TRUE),
        source)
@@ -47,15 +46,15 @@ sapply(list.files("src",
 # create initialization logger
 initLog <- logger$new("GWAS-API-INIT")
 
-# connect to redis
-initLog$log("Connexion to redis server ...")
-REDIS <<- connectRedis()
-initLog$log("Connexion to redis server DONE")
+# # connect to redis
+# initLog$log("Connexion to redis server ...")
+# REDIS <<- connectRedis()
+# initLog$log("Connexion to redis server DONE")
 
 # send initialization message to redis
-initLog$log("GWAS_API started",
-            redis = TRUE,
-            status = "DONE")
+initLog$log("GWAS_API started")#,
+            # redis = TRUE,
+            # status = "DONE")
 
 rm("initLog")
 ##################################### Filter ###################################
@@ -77,7 +76,7 @@ function(req){
 ##### Utils #####
 
 #* Echo back the input
-#* @tag utils
+#* @tag Utils
 #* @param msg The message to echo
 #* @serializer unboxedJSON
 #* @get /echo
@@ -91,7 +90,7 @@ function(msg=""){
 
 
 #* give information about current API version
-#* @tag utils
+#* @tag Utils
 #* @serializer unboxedJSON
 #* @get /version
 function(){
@@ -118,16 +117,17 @@ function(){
 
 
 ##### GWAS #####
-#* Fit a GWAS model (type 2)
-#* @tag Models
+#* Fit a GWAS model. This endpoint take Urls of geno and pheno data (and values of other GWAS parameters) and write an a json file to the give Url using a PUT request. It had been disign to work with amazon S3 services.
+#* @tag GWAS
 #* @param geno_url url of the markers data file (.vcf.gz file)
 #* @param pheno_url url of the phenotypic data file (csv file)
-#* @param upload_url url of the put request for saving the model
-#* @param trait The trait to be analyzed
-#* @param test The testing method (lrt, Wald or score)
-#* @param fixed The option chosen for fixed effect (number of PC, or none (0))
-#* @param thresh_maf keep markers with a MAF > thresh_maf
-#* @param thresh_callrate keep markers with a callrate > thresh_callrate
+#* @param upload_url url of the PUT request for saving the model
+#* @param trait The trait name of the trait to analyzed, should be a column name of the phenotypic data.
+#* @param test Which test to use. Either `"score"`,  `"wald"` or `"lrt"`. For binary phenotypes, test = `"score"` is mandatory. For more information about this parameters see: documentation of the function `association.test` of the R package `gaston`
+#* @param fixed Number of Principal Components to include in the model with fixed effect (for test = `"wald"` or `"lrt"`). Default value is 0. For more information about this parameters see: documentation of the function `association.test` of the R package `gaston`.
+#* @param response Character of length 1, Either "quantitative" or "binary". Is the trait a quantitative or a binary phenotype? Default value is "quantitative".
+#* @param thresh_maf Threshold for filtering markers. Only markers with minor allele frequency > `thresh_maf` will be kept.
+#* @param thresh_callrate Threshold for filtering markers. Only markers with a callrate > `thresh_callrate` will be kept.
 #* @serializer unboxedJSON
 #* @post /gwas
 function(res,
@@ -137,6 +137,7 @@ function(res,
          trait,
          test,
          fixed = 0,
+         response = "quantitative",
          thresh_maf = 0.05,
          thresh_callrate = 0.9){
 
@@ -171,7 +172,7 @@ function(res,
   ### CHECK PARAMETERS
   # Convert to numeric
   options(warn = -1) # disable warnings. for "as.numeric" with character
-  logger$log("Convert numeric parameters...")
+  logger$log("Check parameters...")
   if (!is.na(as.numeric(fixed))) {
     fixed <- as.numeric(fixed)
   } else {
@@ -207,23 +208,34 @@ function(res,
   logger$log("Convert numeric parameters DONE.")
   options(warn = 0) # enable warnings
 
-
-  ### GET DATA
-  logger$log("Load data...")
-  data <- loadData(geno_url, pheno_url)
-  logger$log("Load data DONE.")
-
   ### GWAS
   logger$log("Generate Gwas model...")
-  # calc model
-  model <- gwas(data, trait, test, fixed, thresh_maf, thresh_callrate)
+  gwas <- run_gwas(genoFile = NULL,
+                        phenoFile = NULL,
+                        genoUrl = geno_url,
+                        phenoUrl = pheno_url,
+                        trait = trait,
+                        test = test,
+                        fixed = fixed,
+                        response = response,
+                        thresh_maf = thresh_maf,
+                        thresh_callrate = thresh_callrate,
+                        dir = tempdir())
+  localFile <- gwas$file
+  logger$log("Generate Gwas model DONE:")
+
   modelId <- gsub("\\.", "-",
                   paste0("GWAS-model_",
-                         "_", trait,"_",
+                         trait,"_",
+                         test,"_",
+                         fixed,"_",
+                         response,"_",
+                         thresh_maf,"_",
+                         thresh_callrate,"_",
                          as.numeric(callTime)))
-  logger$log("Generate Gwas model DONE:")
   logger$log(time = FALSE, context = FALSE,
              "modelId: ", modelId)
+
 
 
   # save model information
@@ -238,24 +250,17 @@ function(res,
     trait = trait,
     test = test,
     fixed = as.character(fixed),
+    response = response,
     thresh_maf = as.character(thresh_maf),
     thresh_callrate = as.character(thresh_callrate),
-    modelRobjectMD5 = digest(model)
+    modelRobjectMD5 = digest(gwas$gwasRes)
   )
   logger$log("Save model information DONE")
 
-
+browser()
   ### UPLOAD model
   logger$log("Upload model ...:")
   logger$log("Save model in tmp dir...")
-
-  localFile <- tempfile(pattern = "GWAS-Results",
-                        tmpdir = tempdir(),
-                        fileext = ".json")
-
-  writeLines(toJSON(list(gwas = model,
-                         info = out$modelInfo)),
-             con = localFile)
 
   logger$log("Make PUT request to AWS S3 ...")
   putResult <- PUT(url = upload_url,
@@ -286,21 +291,87 @@ function(res,
   out$message <- "Model created"
   out$modelId <- modelId
   logger$log("Create response DONE")
-  logger$log("END",
-             redis = TRUE,
-             status = "DONE",
-             action_type = "GWAS")
+  logger$log("END")#,
+             # redis = TRUE,
+             # status = "DONE",
+             # action_type = "GWAS")
   out
 }
 
 
+##### adjusted Results #####
+
+#* Adjusted results. This endpoint calculate the adjusted p-values of the gwas analysis and return all the results or only the significant adjusted p-value. The results are return in json format.
+#* @tag GWAS
+#* @param modelUrl url of the result file saved by `/gwas` (json file)
+#* @param adj_method correction method: "holm", "hochberg", "bonferroni", "BH", "BY", "fdr", "none" (see R function `p.adjust`'s documentation for more details)
+#* @param thresh_p threshold for filtering non-significative markers. If not specify return all the values
+#* @serializer unboxedJSON
+#* @get /adjustedResults
+function(res, modelS3Path, adj_method, thresh_p = NA){
+  logger <- logger$new("/datatable")
+  out <- list(
+    inputParams = list(
+      modelS3Path = modelS3Path,
+      adj_method = adj_method,
+      thresh_p = as.character(thresh_p)
+    )
+  )
+
+  logger$log("call with parameters:")
+  logger$log(time = FALSE, context = FALSE,
+    "modelS3Path: ", modelS3Path,"\n",
+    "\t adj_method: ", adj_method, "\n",
+    "\t thresh_p: ", thresh_p)
+
+
+  ### CHECK PARAMETERS
+  # Convert to numeric
+  logger$log("Convert numeric parameters...")
+  if (!is.na(as.numeric(thresh_p)) | is.na(thresh_p)) {
+    thresh_p <- as.numeric(thresh_p)
+  } else {
+    logger$log('Error: "thresh_p" cannot be converted to numeric.')
+    res$status <- 400 # bad request
+    out$error <- '"thresh_p" should be a numeric value.'
+    return(out)
+  }
+  logger$log("Convert numeric parameters DONE.")
+
+
+  # CREATE DATATABLE
+  logger$log("Adjust p-values ...")
+  adj_gwas <- run_resAdjustment(gwasFile = NULL,
+                                gwasUrl = modelS3Path,
+                                adj_method = "bonferroni",
+                                dir = NULL)
+  dta <- jsonlite::fromJSON(adj_gwas$gwasAdjusted)
+  logger$log("Adjust p-values DONE")
+
+  ### RESPONSE
+  logger$log("Create response ... ")
+  res$status <- 200 # status for good GET response
+  if (is.na(thresh_p)) {
+    out$data <- dta
+  } else {
+    out$data <- dta[dta$p_adj <= thresh_p, ]
+  }
+
+  logger$log("Create response DONE ")
+  logger$log("END")#,
+             # redis = TRUE,
+             # status = "DONE",
+             # action_type = "GWAS_RESULTS")
+  out
+
+}
 
 ##### Plots #####
 
-#* Manhattan plot (type 2)
+#* Draw a Manhattan plot. This endpoint return the html code of a plotly interactive graph.
 #* @tag Plots
 #* @param modelS3Path url of the model data file (rds file)
-#* @param adj_method either bonferroni or FDR
+#* @param adj_method correction method: "holm", "hochberg", "bonferroni", "BH", "BY", "fdr", "none" (see R function `p.adjust`'s documentation for more details)
 #* @param thresh_p
 #* @param chr names of the chromosomes to show separated using comma. Show all chromosomes if nothing is specified.
 #* @serializer htmlwidget
@@ -341,63 +412,33 @@ function(res, modelS3Path, adj_method, thresh_p = 0.05, chr = NA){
   }
   logger$log("Convert numeric parameters DONE.")
 
-  # LOAD MODEL
-  logger$log("load model ...")
-  gwasRes <- loadModel(modelS3Path)
-  gwa <- gwasRes$gwas
-  info <- gwasRes$info
-  logger$log("load model DONE.")
-
-  ### CHECK PARAMETERS 2
-  logger$log('Check "chr" parameter ...')
-  if (!is.na(chr)) {
-    # extract chr names
-    chr <- strsplit(chr, ",")[[1]]
-    if (!all(chr %in% as.character(unique(gwa$chr)))) {
-      logger$log('Warning: "chr" is not valid, chromosomes\'names specified are not in the data.')
-      logger$log(time = FALSE, context = FALSE,
-                 '"chr" is:', chr, "\n",
-                 '"gwa$chr" is: ', as.character(unique(gwa$chr)))
-      logger$log(time = FALSE, context = FALSE,
-                 'mismatch will be deleted')
-      chr <- chr[chr %in% as.character(unique(gwa$chr))]
-      if (length(chr) == 0) {
-        chr <- NA
-      }
-    } else {
-      logger$log(time = FALSE, context = FALSE,
-                       '"chr" is good')
-    }
-  }
-  logger$log('Check "chr" parameter DONE')
-
-
-
   # CREATE PLOT
   logger$log("Create plot ...")
-  p <- manPlot(gwa = gwa,
-               adj_method = adj_method,
-               thresh_p = thresh_p,
-               chr = chr,
-               title = info$trait)
+  p <- draw_manhattanPlot(gwasFile = NULL,
+                          gwasUrl = modelS3Path,
+                          adj_method = adj_method,
+                          thresh_p = thresh_p,
+                          chr = chr)
   logger$log("Create plot DONE")
+
+  # RESPONSE
   logger$log("Create response ... ")
   res$status <- 200 # status for good GET response
   logger$log("Create response DONE ")
-  logger$log("END",
-             redis = TRUE,
-             status = "DONE",
-             action_type = "MANHANTTAN_PLOT")
+  logger$log("END")#,
+             # redis = TRUE,
+             # status = "DONE",
+             # action_type = "MANHANTTAN_PLOT")
   p
 }
 
 
 
-#* LD plot
+#* Draw a LD plot. This endpoint return a png image.
 #* @tag Plots
 #* @param geno_url url of the markers data file (.vcf.gz file)
-#* @param from (total number of SNP should be < 50)
-#* @param to (total number of SNP should be < 50)
+#* @param from lower bound of the range of SNPs for which the LD is computed. (`from` must be lower than `to`)
+#* @param to upper bound of the range of SNPs for which the LD is computed (the total number of SNP should be lower than 50)
 #* @serializer png
 #* @get /LDplot
 function(res, geno_url, from, to){
@@ -467,98 +508,21 @@ function(res, geno_url, from, to){
   }
   logger$log('Check number of SNP < 50 DONE')
 
-
-  ### GET DATA
-  logger$log("Load data...")
-  bm.wom <- getMarkerData(geno_url)
-  logger$log("Load data DONE")
-
-  # COMPUTE LD
-  logger$log("Compute LD ...")
-  ld <- LD(bm.wom, c(from, to), measure = "r2")
-  logger$log("Compute LD DONE")
-
-  logger$log("Create LD plot ...")
-  p <- LD.plot(ld, snp.positions = bm.wom@snps$pos[from:to])
-  logger$log("Create LD plot DONE")
+  logger$log('Draw LD plot ...')
+  draw_ldPlot(genoFile = NULL,
+              genoUrl = geno_url,
+              from = from,
+              to = to,
+              dir = NULL)
+  logger$log('Draw LD plot DONE')
 
   logger$log("Create response ... ")
   res$status <- 200 # status for good GET response
   logger$log("Create response DONE ")
-  logger$log("END",
-             redis = TRUE,
-             status = "DONE",
-             action_type = "LD_PLOT")
-  p
+  logger$log("END")#,
+             # redis = TRUE,
+             # status = "DONE",
+             # action_type = "LD_PLOT")
+  # p
 }
 
-##### Tables output #####
-
-#* Table of selected SNPs
-#* @tag Data
-#* @param modelS3Path url of the model data file (rds file)
-#* @param adj_method either bonferroni or FDR
-#* @param thresh_p threshold for p values. If not specify return all values
-#* @serializer unboxedJSON
-#* @get /datatable
-function(res, modelS3Path, adj_method, thresh_p = NA){
-  logger <- logger$new("/datatable")
-  out <- list(
-    inputParams = list(
-      modelS3Path = modelS3Path,
-      adj_method = adj_method,
-      thresh_p = as.character(thresh_p)
-    )
-  )
-
-  logger$log("call with parameters:")
-  logger$log(time = FALSE, context = FALSE,
-    "modelS3Path: ", modelS3Path,"\n",
-    "\t adj_method: ", adj_method, "\n",
-    "\t thresh_p: ", thresh_p)
-
-
-  ### CHECK PARAMETERS
-  # Convert to numeric
-  logger$log("Convert numeric parameters...")
-  if (!is.na(as.numeric(thresh_p)) | is.na(thresh_p)) {
-    thresh_p <- as.numeric(thresh_p)
-  } else {
-    logger$log('Error: "thresh_p" cannot be converted to numeric.')
-    res$status <- 400 # bad request
-    out$error <- '"thresh_p" should be a numeric value.'
-    return(out)
-  }
-  logger$log("Convert numeric parameters DONE.")
-
-
-  # LOAD MODEL
-  logger$log("Load model...")
-  gwasRes <- loadModel(modelS3Path)
-  gwa <- gwasRes$gwas
-  info <- gwasRes$info
-  logger$log("Load model DONE")
-
-  # CREATE DATATABLE
-  logger$log("Adjust p-values ...")
-  p.adj <- p.adjust(gwa$p, method = adj_method)
-  logger$log("Adjust p-values DONE")
-
-  ### RESPONSE
-  logger$log("Create response ... ")
-  res$status <- 200 # status for good GET response
-  if (is.na(thresh_p)) {
-    out$data <- gwa
-  } else {
-    out$data <- gwa[p.adj < thresh_p, ]
-  }
-
-  # datatable(gwa[p.adj < thresh_p, ])
-  logger$log("Create response DONE ")
-  logger$log("END",
-             redis = TRUE,
-             status = "DONE",
-             action_type = "GWAS_RESULTS")
-  out
-
-}
