@@ -25,16 +25,16 @@ cat(as.character(Sys.time()), "-",
 
 # required packages
 library(plumber)
-library(digest) # for MD5 sum calculation
-library(DT)
-library(gaston) # for many functions
-library(httr) # make HTTP requests
-library(xml2) # manage xml format
-library(rjson) # manage json format
-library(R6) # R6 objects
-library(manhattanly) # manhattan plot using plotly
+stopifnot("digest" %in% rownames(installed.packages()))  # for MD5 sum calculation
+# library(DT)
+# library(gaston) # for many functions
+# library(httr) # make HTTP requests
+# library(xml2) # manage xml format
+# library(rjson) # manage json format
+# library(R6) # R6 objects
+# library(manhattanly) # manhattan plot using plotly
 # library(redux) # manage redis
-stopifnot("git2r" %in% rownames(installed.packages()))
+# stopifnot("git2r" %in% rownames(installed.packages()))
 
 
 # load API's functions
@@ -108,8 +108,8 @@ function(){
 
   logger$log("calculate MD5 sum of all the '.R' files")
   apiRfiles <- dir(all.files = T, pattern = ".R$", recursive = T)
-  allFP <- sapply(apiRfiles, function(f){digest(file = f)})
-  out$RfilesFingerPrint <- digest(allFP)
+  allFP <- sapply(apiRfiles, function(f){digest::digest(file = f)})
+  out$RfilesFingerPrint <- digest::digest(allFP)
   logger$log("END")
   return(out)
 }
@@ -133,7 +133,7 @@ function(){
 function(res,
          geno_url,
          pheno_url,
-         upload_url,
+         upload_url = NA,
          trait,
          test,
          fixed = 0,
@@ -253,49 +253,59 @@ function(res,
     response = response,
     thresh_maf = as.character(thresh_maf),
     thresh_callrate = as.character(thresh_callrate),
-    modelRobjectMD5 = digest(gwas$gwasRes)
+    modelRobjectMD5 = digest::digest(gwas$gwasRes)
   )
   logger$log("Save model information DONE")
 
-browser()
-  ### UPLOAD model
-  logger$log("Upload model ...:")
-  logger$log("Save model in tmp dir...")
 
-  logger$log("Make PUT request to AWS S3 ...")
-  putResult <- PUT(url = upload_url,
-                   body = upload_file(localFile, type = ""))
-  if (putResult$status_code != 200) {
-    logger$log("Error, PUT request's satus code is different than 200: ",
-               putResult$status)
-    res$status <- putResult$status_code
-    out <- as_list(content(putResult))
-    out$GWAS_API_error <- "error PUT request didn't get status code 200"
-    logger$log('Exit with error code ', putResult$status)
+  ### UPLOAD model
+  if (!is.na(upload_url)) {
+    logger$log("Upload model ...:")
+    logger$log("Save model in tmp dir...")
+
+    logger$log("Make PUT request ...")
+    putResult <- PUT(url = upload_url,
+                     body = upload_file(localFile, type = ""))
+    if (putResult$status_code != 200) {
+      logger$log("Error, PUT request's satus code is different than 200: ",
+                 putResult$status)
+      res$status <- putResult$status_code
+      out <- as_list(content(putResult))
+      out$GWAS_API_error <- "error PUT request didn't get status code 200"
+      logger$log('Exit with error code ', putResult$status)
+      logger$log("END")
+      return(out)
+    }
+    logger$log("Upload model DONE:")
+    logger$log(time = FALSE, context = FALSE,
+               "putUrl: ", upload_url)
+
+    ### RESPONSE
+    logger$log("Create response ...")
+    res$status <- 201 # status for good post response
+    out$message <- "Model created"
+    out$modelId <- modelId
+    logger$log("Create response DONE")
+    logger$log("END")#,
+    # redis = TRUE,
+    # status = "DONE",
+    # action_type = "GWAS")
+    return(out)
+  } else {
+    logger$log("Create response ...")
+    gwasList <- list(gwas = gwas$gwasRes,
+                     metadata = gwas$metadata)
+    out <- jsonlite::toJSON(gwasList,
+                            complex = "list",
+                            # pretty = T,
+                            digits = NA)
+    res$status <- 200
+    logger$log("Create response DONE")
     logger$log("END")
     return(out)
   }
-  logger$log("Upload model DONE:")
-  logger$log(time = FALSE, context = FALSE,
-             "putUrl: ", upload_url)
-
-  # TODO:
-  # see : https://docs.google.com/document/d/1gaTazFm_a6klD9krZPKGHc5x_D-SWL8K93M6dwsTiLE/edit
-  # write models's information in a database
-  # so that endpoints to check already fitted model can be created
 
 
-  ### RESPONSE
-  logger$log("Create response ...")
-  res$status <- 201 # status for good post response
-  out$message <- "Model created"
-  out$modelId <- modelId
-  logger$log("Create response DONE")
-  logger$log("END")#,
-             # redis = TRUE,
-             # status = "DONE",
-             # action_type = "GWAS")
-  out
 }
 
 
@@ -303,16 +313,16 @@ browser()
 
 #* Adjusted results. This endpoint calculate the adjusted p-values of the gwas analysis and return all the results or only the significant adjusted p-value. The results are return in json format.
 #* @tag GWAS
-#* @param modelUrl url of the result file saved by `/gwas` (json file)
+#* @param gwas_url url of the result file saved by `/gwas` (json file)
 #* @param adj_method correction method: "holm", "hochberg", "bonferroni", "BH", "BY", "fdr", "none" (see R function `p.adjust`'s documentation for more details)
 #* @param thresh_p threshold for filtering non-significative markers. If not specify return all the values
 #* @serializer unboxedJSON
 #* @get /adjustedResults
-function(res, modelS3Path, adj_method, thresh_p = NA){
+function(res, gwas_url, adj_method, thresh_p = NA){
   logger <- logger$new("/datatable")
   out <- list(
     inputParams = list(
-      modelS3Path = modelS3Path,
+      gwas_url = gwas_url,
       adj_method = adj_method,
       thresh_p = as.character(thresh_p)
     )
@@ -320,7 +330,7 @@ function(res, modelS3Path, adj_method, thresh_p = NA){
 
   logger$log("call with parameters:")
   logger$log(time = FALSE, context = FALSE,
-    "modelS3Path: ", modelS3Path,"\n",
+    "gwas_url: ", gwas_url,"\n",
     "\t adj_method: ", adj_method, "\n",
     "\t thresh_p: ", thresh_p)
 
@@ -339,10 +349,10 @@ function(res, modelS3Path, adj_method, thresh_p = NA){
   logger$log("Convert numeric parameters DONE.")
 
 
-  # CREATE DATATABLE
+  # Adjust p-values
   logger$log("Adjust p-values ...")
   adj_gwas <- run_resAdjustment(gwasFile = NULL,
-                                gwasUrl = modelS3Path,
+                                gwasUrl = gwas_url,
                                 adj_method = "bonferroni",
                                 dir = NULL)
   dta <- jsonlite::fromJSON(adj_gwas$gwasAdjusted)
@@ -350,13 +360,18 @@ function(res, modelS3Path, adj_method, thresh_p = NA){
 
   ### RESPONSE
   logger$log("Create response ... ")
-  res$status <- 200 # status for good GET response
   if (is.na(thresh_p)) {
-    out$data <- dta
+    dta <- dta
   } else {
-    out$data <- dta[dta$p_adj <= thresh_p, ]
+    dta <- dta[dta$p_adj <= thresh_p, ]
   }
-
+  gwasList <- list(gwasAdjusted = dta,
+                   metadata = adj_gwas$metadata)
+  out <- jsonlite::toJSON(gwasList,
+                          complex = "list",
+                          # pretty = T,
+                          digits = NA)
+  res$status <- 200
   logger$log("Create response DONE ")
   logger$log("END")#,
              # redis = TRUE,
@@ -525,4 +540,3 @@ function(res, geno_url, from, to){
              # action_type = "LD_PLOT")
   # p
 }
-
