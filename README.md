@@ -52,9 +52,9 @@ Rscript tests/testthat.R
 For manually testing, you can use these urls when the api is running in docker:
 
 ```
-file:///GWAS_API/GWAS-Engine/data/models/gwasResult.json
-file:///GWAS_API/GWAS-Engine/data/markers/testMarkerData01.vcf.gz
+file:///GWAS_API/GWAS-Engine/data/results/gwasResult.json
+file:///GWAS_API/GWAS-Engine/data/geno/testMarkerData01.vcf.gz
 file:///GWAS_API/GWAS-Engine/data/pheno/testPhenoData01.csv
 ```
 
-For trait this one  is in the pheno file: `Flowering.time.at.Arkansas`
+For trait this one is in the pheno file: `Flowering.time.at.Arkansas`
