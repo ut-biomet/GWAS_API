@@ -385,19 +385,19 @@ function(res, gwas_url, adj_method, thresh_p = NA){
 
 #* Draw a Manhattan plot. This endpoint return the html code of a plotly interactive graph.
 #* @tag Plots
-#* @param modelS3Path url of the model data file (rds file)
+#* @param gwas_url url of the result file saved by `/gwas` (json file)
 #* @param adj_method correction method: "holm", "hochberg", "bonferroni", "BH", "BY", "fdr", "none" (see R function `p.adjust`'s documentation for more details)
 #* @param thresh_p
 #* @param chr names of the chromosomes to show separated using comma. Show all chromosomes if nothing is specified.
 #* @serializer htmlwidget
 #* @get /manplot
-function(res, modelS3Path, adj_method, thresh_p = 0.05, chr = NA){
+function(res, gwas_url, adj_method, thresh_p = 0.05, chr = NA){
   # # save call time.
   # callTime <- Sys.time()
   logger <- logger$new("/manplot")
   out <- list(
     inputParams = list(
-      modelS3Path = modelS3Path,
+      gwas_url = gwas_url,
       adj_method = adj_method,
       thresh_p = as.character(thresh_p),
       chr = chr
@@ -406,7 +406,7 @@ function(res, modelS3Path, adj_method, thresh_p = 0.05, chr = NA){
 
   logger$log("call with parameters:")
   logger$log(time = FALSE, context = FALSE,
-    "modelS3Path: ", modelS3Path,"\n",
+    "gwas_url: ", gwas_url,"\n",
     "\t adj_method: ", adj_method, "\n",
     "\t thresh_p: ", thresh_p, "\n",
     "\t chr: ", chr)
@@ -430,7 +430,7 @@ function(res, modelS3Path, adj_method, thresh_p = 0.05, chr = NA){
   # CREATE PLOT
   logger$log("Create plot ...")
   p <- draw_manhattanPlot(gwasFile = NULL,
-                          gwasUrl = modelS3Path,
+                          gwasUrl = gwas_url,
                           adj_method = adj_method,
                           thresh_p = thresh_p,
                           chr = chr)
