@@ -7,9 +7,15 @@ library(testthat)
 # setup global variables for tests
 
 ip <- "127.0.0.1"
-# ip <- "52.193.46.252" # SIP AWS server
 port <- 8181
 host <- paste0("http://", ip, ":", port)
+
+docker <- TRUE
+if (docker) {
+    dtaPref <- "file:///GWAS_API/GWAS-Engine/data"
+} else {
+    dtaPref <- "file:///Users/julian/Documents/GWAS_API/GWAS-Engine/data"
+}
 
 # Check if the API is available
 testthat::expect_error(GET(host), NA)

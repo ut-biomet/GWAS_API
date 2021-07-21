@@ -39,14 +39,15 @@ test_that("POST /gwas", {
   # create path and request
   path <- paste0(host,"/gwas")
   query <- list(
-    fixed = 4,
-    trait_type = "quantitative",
-    trait = "Pericarp.color",
-    test = "lrt", # (lrt, Wald or score)
-    phenoDataId = "testPhenoData01",
-    markerDataId = "testMarkerData01",
-    thresh_callrate = "0.9",
-    thresh_maf = 0.06
+    geno_url = paste0(dtaPref, "/geno/testMarkerData01.vcf.gz"),
+    pheno_url = paste0(dtaPref, "/pheno/testPhenoData01.csv"),
+    # upload_url = NA,
+    trait = "Flowering.time.at.Arkansas",
+    test = "score",
+    fixed = 0,
+    response = "quantitative",
+    thresh_maf = 0.05,
+    thresh_callrate = 0.9
   )
 
 
@@ -55,106 +56,58 @@ test_that("POST /gwas", {
                query = query)
 
   # test status
-  expect_equal(resp$status_code, 201)
+  expect_equal(resp$status_code, 200)
 
   # test response content
-  respContent <- content(resp)
-  # input parameters:
-  expect_equal(respContent$inputParams,
-               list(
-                 markerDataId = "testMarkerData01",
-                 phenoDataId = "testPhenoData01",
-                 trait = "Pericarp.color",
-                 test = "lrt",
-                 fixed = "4",
-                 tresh.maf = "0.06",
-                 tresh.callrate = "0.9"
-               ))
-
-  # test message
-  expect_equal(respContent$message, "Model created")
-
-  # test model id
-  expect_match(respContent$modelId, "^GWAS_") # start by "GWAS_"
-  expect_match(respContent$modelId,
-               chartr(".", "-", query$phenoDataId)) # contain phenoDataId
-  expect_match(respContent$modelId,
-               chartr(".", "-", query$markerDataId)) # contain markerDataId
-  expect_match(respContent$modelId,
-               chartr(".", "-", query$trait)) # contain trait
-
-  # save model id for future tests
-  saveRDS(respContent$modelId, "tmp/modelID.rds")
-
+  res <- jsonlite::fromJSON(content(resp))
+  expect_is(res, "list")
+  expect_equal(names(res), c("gwas", "metadata"))
+  expect_is(res$metadata, "list")
+  expect_equal(names(res$metadata),
+               c("genoFP",
+                 "phenoFP",
+                 "trait",
+                 "test",
+                 "fixed",
+                 "response",
+                 "thresh_maf",
+                 "thresh_callrate",
+                 "date"))
+  expect_is(fromJSON(res$gwas), "data.frame")
 })
 
-# Test POST /gwas - Bad request ----
-test_that("POST /gwas", {
-
+# Test GET /adjustedResults ----
+test_that("GET /adjustedResults", {
   # create path and request
-  path <- paste0(host,"/gwas")
+  path <- paste0(host,"/adjustedResults")
   query <- list(
-    fixed = "four", # <-- Wrong parameter (should be numeric)
-    trait_type = "quantitative",
-    trait = "Pericarp.color",
-    test = "lrt", # (lrt, Wald or score)
-    phenoDataId = "testPhenoData01",
-    markerDataId = "testMarkerData01"
-  )
+    gwas_url = paste0(dtaPref, "/results/gwasResult.json"),
+    adj_method = "bonferroni")
 
   # send request
-  resp <- POST(path,
-               query = query)
+  resp <- GET(path, query = query)
   # test status
-  expect_equal(resp$status_code, 400)
+  expect_equal(resp$status_code, 200)
   # test response content
-  # test message
-  respContent <- content(resp)
-  expect_equal(respContent$error,
-               '"fixed" should be a numeric value.')
-
-  # input parameters:
-  expect_equal(respContent$inputParams,
-               list(
-                 markerDataId = "testMarkerData01",
-                 phenoDataId = "testPhenoData01",
-                 trait = "Pericarp.color",
-                 test = "lrt",
-                 fixed = "four",
-                 tresh.maf = "0.05",
-                 tresh.callrate = "0.9"
-               ))
-
-
-  # create request
-  query$fixed <- 4
-  query$tresh.maf <- "zero zero five"
-  # send request
-  resp <- POST(path,
-               query = query)
-  # test status
-  expect_equal(resp$status_code, 400)
-  # test response content
-  # test message
-  respContent <- content(resp)
-  expect_equal(respContent$error,
-               '"tresh.maf" should be a numeric value.')
-
-
-  # create request
-  query$tresh.maf <- 0.05
-  query$tresh.callrate <- "zero nine"
-  # send request
-  resp <- POST(path,
-               query = query)
-  # test status
-  expect_equal(resp$status_code, 400)
-  # test response content
-  # test message
-  respContent <- content(resp)
-  expect_equal(respContent$error,
-               '"tresh.callrate" should be a numeric value.')
+  res <- jsonlite::fromJSON(content(resp))
+  expect_is(res, "list")
+  expect_equal(names(res),
+               c("gwasAdjusted", "metadata"))
+  expect_equal(names(res$metadata),
+               c("genoFP",
+                 "phenoFP",
+                 "trait",
+                 "test",
+                 "fixed",
+                 "response",
+                 "thresh_maf",
+                 "thresh_callrate",
+                 "date",
+                 "adj_method"))
+  expect_is(res$gwasAdjusted, "data.frame")
 })
+
+
 
 
 # Test GET /manplot ----
@@ -163,9 +116,10 @@ test_that("GET /manplot", {
   # creat path and request
   path <- paste0(host,"/manplot")
   query <- list(
-    modelId = readRDS("tmp/modelID.rds"),
-    adj_method = "bonferroni",
-    thresh.p = "0.05"
+     gwas_url = paste0(dtaPref, "/results/gwasResult.json"),
+     adj_method = "bonferroni",
+     thresh_p = 0.05
+     # chr = NA
   )
 
 
@@ -177,7 +131,7 @@ test_that("GET /manplot", {
   expect_equal(resp$status_code, 200)
 
   # test response content
-  expect_equal(resp$headers$`content-type`, "image/png")
+  expect_equal(resp$headers$`content-type`, "text/html; charset=UTF-8")
 })
 
 
@@ -188,9 +142,9 @@ test_that("GET /LDplot", {
   # creat path and request
   path <- paste0(host,"/LDplot")
   query <- list(
-    markerDataId = "testMarkerData01",
-    from = 1,
-    to = 11
+    geno_url = paste0(dtaPref, "/geno/testMarkerData01.vcf.gz"),
+    from = "1",
+    to = "20"
     )
 
 
@@ -205,54 +159,6 @@ test_that("GET /LDplot", {
   expect_equal(resp$headers$`content-type`, "image/png")
 })
 
-
-
-# Test GET /datatable ----
-test_that("GET /datatable", {
-
-  # creat path and request
-  path <- paste0(host,"/datatable")
-  query <- list(
-    modelId = readRDS("tmp/modelID.rds"),
-    adj_method = "bonferroni",
-    thresh.p = "0.05"
-  )
-
-  # send request
-  resp <- GET(path,
-              query = query)
-
-  # test status
-  expect_equal(resp$status_code, 200)
-
-  # test response content
-  respContent <- jsonlite::fromJSON(content(resp, type = "text"))
-
-
-  # input parameters:
-  expect_equal(respContent$inputParams,
-               list(modelId = query$modelId,
-                    adj_method = "bonferroni",
-                    thresh.p = "0.05"))
-
-  warning("can't check values of /datatable")
-
-
-  # creat path and request
-  path <- paste0(host,"/datatable")
-  query <- list(
-    modelId = readRDS("tmp/modelID.rds"),
-    adj_method = "bonferroni"
-  )
-
-  # send request
-  resp <- GET(path,
-              query = query)
-
-  # test status
-  expect_equal(resp$status_code, 200)
-
-})
 
 
 
