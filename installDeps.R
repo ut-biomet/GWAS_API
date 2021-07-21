@@ -4,4 +4,4 @@
 # Description:
 # Install GWAS-engine dependencies
 
-install.packages(c("git2r", "digest"))
+install.packages(c("plumber", "git2r", "digest"))

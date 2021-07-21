@@ -1,42 +1,33 @@
 FROM rstudio/plumber
 LABEL maintainer="Julien Diot <juliendiot@ut-biomet.org>"
 
-EXPOSE 8080
-
-RUN useradd plumber
+WORKDIR /GWAS_API
 
 RUN apt-get update --allow-releaseinfo-change && apt-get install -y \
     gcc-8-base \
     libcurl4 \
     libcurl4-openssl-dev \
     libxml2-dev \
+    libz-dev \
     curl \
     pandoc \
     libhiredis-dev
 
+# install dependencies
+# install renv package 
+ENV RENV_VERSION 0.13.2
+RUN R -e "install.packages('remotes', repos = c(CRAN = 'https://cloud.r-project.org'))"
+RUN R -e "remotes::install_github('rstudio/renv@${RENV_VERSION}')"
+# install deps using renv
+COPY renv.lock renv.lock
+RUN R -e 'renv::init()'
 
-# set and check R package repository, repo will be saved in the ~/.Rprofile file
-RUN SNAPSHOT="https://cran.microsoft.com/snapshot/2021-07-01/" && \
-    if [ $(curl -s -o /dev/null -w "%{http_code}" $SNAPSHOT) = "200" ] ; then echo "OK: R pkg repository server accessible." ; else echo "ERROR: R pkg repository server not accessible. status = $(curl -s -o /dev/null -w "%{http_code}" $SNAPSHOT)" ; fi &&\
-    touch /.Rprofile && \
-    echo "options(repos = c(CRAN = '$SNAPSHOT'))" >> ~/.Rprofile
 
 # get application code
-COPY ./ /GWAS_API
-# using git (app repo must be public)
-# RUN git clone --depth=1 https://github.com/ut-biomet/GWAS_API.git
-
-RUN chown plumber.plumber -R /GWAS_API
-RUN chmod -R 774 /GWAS_API
+COPY . .
 
 
-# install dependencies
-RUN Rscript /GWAS_API/installDeps.R
-RUN Rscript /GWAS_API/GWAS-Engine/installDeps.R
-RUN rm ~/.Rprofile
-
-
-USER plumber
+EXPOSE 8080
 
 ENTRYPOINT []
-CMD R -e "setwd('/GWAS_API'); api <- plumber::plumb('/GWAS_API/plumber.R'); api\$run(port = 8080, host = '0.0.0.0')"
+CMD R -e "api <- plumber::plumb('plumber.R'); api\$run(port = 8080, host = '0.0.0.0')"
