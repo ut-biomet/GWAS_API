@@ -264,8 +264,8 @@ function(res,
     logger$log("Save model in tmp dir...")
 
     logger$log("Make PUT request ...")
-    putResult <- PUT(url = upload_url,
-                     body = upload_file(localFile, type = ""))
+    putResult <- httr::PUT(url = upload_url,
+                           body = httr::upload_file(localFile, type = ""))
     if (putResult$status_code != 200) {
       logger$log("Error, PUT request's satus code is different than 200: ",
                  putResult$status)
