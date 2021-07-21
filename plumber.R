@@ -319,7 +319,7 @@ function(res,
 #* @serializer unboxedJSON
 #* @get /adjustedResults
 function(res, gwas_url, adj_method, thresh_p = NA){
-  logger <- logger$new("/datatable")
+  logger <- logger$new("/adjustedResults")
   out <- list(
     inputParams = list(
       gwas_url = gwas_url,
