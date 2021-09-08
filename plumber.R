@@ -122,10 +122,10 @@ function(){
 #* @param geno_url url of the markers data file (.vcf.gz file)
 #* @param pheno_url url of the phenotypic data file (csv file)
 #* @param upload_url url of the PUT request for saving the model
-#* @param trait The trait name of the trait to analyzed, should be a column name of the phenotypic data.
-#* @param test Which test to use. Either `"score"`,  `"wald"` or `"lrt"`. For binary phenotypes, test = `"score"` is mandatory. For more information about this parameters see: documentation of the function `association.test` of the R package `gaston`
-#* @param fixed Number of Principal Components to include in the model with fixed effect (for test = `"wald"` or `"lrt"`). Default value is 0. For more information about this parameters see: documentation of the function `association.test` of the R package `gaston`.
-#* @param response Character of length 1, Either "quantitative" or "binary". Is the trait a quantitative or a binary phenotype? Default value is "quantitative".
+#* @param trait name of the trait to analyze. Must be a column name of the phenotypic file.
+#* @param test Which test to use. Either `"score"`, `"wald"` or `"lrt"`. For binary phenotypes, test = `"score"` is mandatory. For more information about this parameters see: https://www.rdocumentation.org/packages/gaston/versions/1.4.9/topics/association.test
+#* @param fixed Number of Principal Components to include in the model with fixed effect (for test = `"wald"` or `"lrt"`). Default value is 0. For more information about this parameters see: https://www.rdocumentation.org/packages/gaston/versions/1.4.9/topics/association.test
+#* @param response Either "quantitative" or "binary". Is the trait a quantitative or a binary phenotype? Default value is "quantitative".
 #* @param thresh_maf Threshold for filtering markers. Only markers with minor allele frequency > `thresh_maf` will be kept.
 #* @param thresh_callrate Threshold for filtering markers. Only markers with a callrate > `thresh_callrate` will be kept.
 #* @serializer unboxedJSON
@@ -313,7 +313,7 @@ function(res,
 #* Adjusted results. This endpoint calculate the adjusted p-values of the gwas analysis and return all the results or only the significant adjusted p-value. The results are return in json format.
 #* @tag GWAS
 #* @param gwas_url url of the result file saved by `/gwas` (json file)
-#* @param adj_method correction method: "holm", "hochberg", "bonferroni", "BH", "BY", "fdr", "none" (see R function `p.adjust`'s documentation for more details)
+#* @param adj_method correction method: "holm", "hochberg", "bonferroni", "BH", "BY", "fdr", "none". Default: "bonferroni". (see https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/p.adjust for more details)
 #* @param thresh_p threshold for filtering non-significative markers. If not specify return all the values
 #* @serializer unboxedJSON
 #* @get /adjustedResults
@@ -384,8 +384,8 @@ function(res, gwas_url, adj_method, thresh_p = NA){
 #* Draw a Manhattan plot. This endpoint return the html code of a plotly interactive graph.
 #* @tag Plots
 #* @param gwas_url url of the result file saved by `/gwas` (json file)
-#* @param adj_method correction method: "holm", "hochberg", "bonferroni", "BH", "BY", "fdr", "none" (see R function `p.adjust`'s documentation for more details)
-#* @param thresh_p
+#* @param adj_method p-value correction method: "holm", "hochberg", "bonferroni", "BH", "BY", "fdr", "none". Default: "bonferroni". (see https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/p.adjust for more details)
+#* @param thresh_p p value significant threshold (default 0.05)
 #* @param chr names of the chromosomes to show separated using comma. Show all chromosomes if nothing is specified.
 #* @serializer htmlwidget
 #* @get /manplot
@@ -450,7 +450,7 @@ function(res, gwas_url, adj_method, thresh_p = 0.05, chr = NA){
 #* Draw a LD plot. This endpoint return a png image.
 #* @tag Plots
 #* @param geno_url url of the markers data file (.vcf.gz file)
-#* @param from lower bound of the range of SNPs for which the LD is computed. (`from` must be lower than `to`)
+#* @param from lower bound of the range of SNPs for which the LD is computed (`from` must be lower than `to`)
 #* @param to upper bound of the range of SNPs for which the LD is computed (the total number of SNP should be lower than 50)
 #* @serializer png
 #* @get /LDplot
