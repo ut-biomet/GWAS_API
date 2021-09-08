@@ -10,11 +10,11 @@ ip <- "127.0.0.1"
 port <- 8181
 host <- paste0("http://", ip, ":", port)
 
-docker <- TRUE
+docker <- FALSE
 if (docker) {
     dtaPref <- "file:///GWAS_API/GWAS-Engine/data"
 } else {
-    dtaPref <- "file:///Users/julian/Documents/GWAS_API/GWAS-Engine/data"
+    dtaPref <- paste0( "file://", getwd(), "/GWAS-Engine/data")
 }
 
 # Check if the API is available

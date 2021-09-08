@@ -13,7 +13,7 @@
 
 ##### API description #####
 #* @apiTitle GWAS API
-#* @apiDescription API for GWAS models fitting and use
+#* @apiDescription REST API for GWAS analysis
 #* @apiVersion 0.0.1
 #* @apiContact @email juliendiot@ut-biomet.org
 #* @apiTag Utils Endpoints for checking the API
@@ -219,8 +219,7 @@ function(res,
                         fixed = fixed,
                         response = response,
                         thresh_maf = thresh_maf,
-                        thresh_callrate = thresh_callrate,
-                        dir = tempdir())
+                        thresh_callrate = thresh_callrate)
   localFile <- gwas$file
   logger$log("Generate Gwas model DONE:")
 
@@ -353,8 +352,7 @@ function(res, gwas_url, adj_method, thresh_p = NA){
   logger$log("Adjust p-values ...")
   adj_gwas <- run_resAdjustment(gwasFile = NULL,
                                 gwasUrl = gwas_url,
-                                adj_method = "bonferroni",
-                                dir = NULL)
+                                adj_method = "bonferroni")
   dta <- jsonlite::fromJSON(adj_gwas$gwasAdjusted)
   logger$log("Adjust p-values DONE")
 
@@ -528,7 +526,7 @@ function(res, geno_url, from, to){
               genoUrl = geno_url,
               from = from,
               to = to,
-              dir = NULL)
+              outFile = NULL)
   logger$log('Draw LD plot DONE')
 
   logger$log("Create response ... ")
