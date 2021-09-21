@@ -1,5 +1,26 @@
 # GWAS_API
 
+This is a REST api wrapper around "GWAS-Engine". For more detailed documentation, please check [GWAS-Engine's readme](https://github.com/ut-biomet/GWAS-Engine).
+
+
+
+## API documentation
+
+To generate the [`openapi.json`](./openapi.json) file one can run in `R`:
+
+```R
+pr <- plumber::plumb(file='plumber.R')
+spec <- utils::modifyList(list(servers = list(list(url = ""))),
+                               pr$getApiSpec())
+writeLines(jsonlite::toJSON(spec,
+                            complex = "list",
+                            auto_unbox = TRUE,
+                            pretty = T,
+                            digits = NA,
+                            na = 'string'),
+                            con = "openapi.json")
+```
+
 ## Build and deploy
 
 To this project use docker to build and deploy the API.
@@ -43,8 +64,7 @@ Or you can run the Docker container (mapping the API on the port `8181`):
 docker run -d --rm --name gwasapi -p 8181:8080 utbiomet/gwasapi
 ```
 
-Then run the script `tests/testthat.R`:
-
+Then run the script `tests/testthat.R`: 
 ```sh
 Rscript tests/testthat.R
 ```

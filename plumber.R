@@ -23,18 +23,7 @@
 cat(as.character(Sys.time()), "-",
     "Start Plumber API using 'plumber v'", as.character(packageVersion("plumber")), "\n")
 
-# required packages
 library(plumber)
-stopifnot("digest" %in% rownames(installed.packages()))  # for MD5 sum calculation
-# library(DT)
-# library(gaston) # for many functions
-# library(httr) # make HTTP requests
-# library(xml2) # manage xml format
-# library(rjson) # manage json format
-# library(R6) # R6 objects
-# library(manhattanly) # manhattan plot using plotly
-# library(redux) # manage redis
-# stopifnot("git2r" %in% rownames(installed.packages()))
 
 
 # load API's functions
