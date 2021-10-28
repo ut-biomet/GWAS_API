@@ -7,10 +7,10 @@ library(testthat)
 # setup global variables for tests
 
 ip <- "127.0.0.1"
-port <- 8181
+port <- 8080
 host <- paste0("http://", ip, ":", port)
 
-docker <- FALSE
+docker <- TRUE
 if (docker) {
     dtaPref <- "file:///GWAS_API/GWAS-Engine/data"
 } else {

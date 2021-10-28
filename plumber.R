@@ -370,15 +370,27 @@ function(res, gwas_url, adj_method, thresh_p = NA){
 
 ##### Plots #####
 
-#* Draw a Manhattan plot. This endpoint return the html code of a plotly interactive graph.
+#* Draw a Manhattan plot. This endpoint return the html code of a plotly
+#* interactive graph. By default only the 3000 points with the lowest p-values
+#* are display on the graph.
 #* @tag Plots
 #* @param gwas_url url of the result file saved by `/gwas` (json file)
 #* @param adj_method p-value correction method: "holm", "hochberg", "bonferroni", "BH", "BY", "fdr", "none". Default: "bonferroni". (see https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/p.adjust for more details)
 #* @param thresh_p p value significant threshold (default 0.05)
 #* @param chr names of the chromosomes to show separated using comma. Show all chromosomes if nothing is specified.
+#* @param filter_pAdj [numeric] threshold to remove points with pAdj > filter_pAdj from the plot (default no filtering)
+#* @param filter_nPoints [numeric] threshold to keep only the filter_nPoints with the lowest p-values for the plot (default 3000 points)
+#* @param filter_quant [numeric] threshold to keep only the filter_quant*100 % of the points with the lowest p-values for the plot (default no filtering)
 #* @serializer htmlwidget
 #* @get /manplot
-function(res, gwas_url, adj_method, thresh_p = 0.05, chr = NA){
+function(res,
+         gwas_url,
+         adj_method,
+         thresh_p = 0.05,
+         chr = NA,
+         filter_pAdj = 1,
+         filter_nPoints = 3000,
+         filter_quant = 1){
   # # save call time.
   # callTime <- Sys.time()
   logger <- logger$new("/manplot")
@@ -412,6 +424,16 @@ function(res, gwas_url, adj_method, thresh_p = 0.05, chr = NA){
     logger$log("END")
     return(out)
   }
+  if (!is.na(as.numeric(filter_quant))) {
+    filter_quant <- as.numeric(filter_quant)
+  } else {
+    logger$log('Error: "filter_quant" cannot be converted to numeric.')
+    res$status <- 400 # bad request
+    out$error <- '"filter_quant" should be a numeric value.'
+    logger$log('Exit with error code 400')
+    logger$log("END")
+    return(out)
+  }
   logger$log("Convert numeric parameters DONE.")
 
   # CREATE PLOT
@@ -420,7 +442,10 @@ function(res, gwas_url, adj_method, thresh_p = 0.05, chr = NA){
                           gwasUrl = gwas_url,
                           adj_method = adj_method,
                           thresh_p = thresh_p,
-                          chr = chr)
+                          chr = chr,
+                          filter_pAdj = filter_pAdj,
+                          filter_nPoints = filter_nPoints,
+                          filter_quant = filter_quant)
   logger$log("Create plot DONE")
 
   # RESPONSE

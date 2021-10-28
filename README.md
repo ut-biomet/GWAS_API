@@ -55,13 +55,13 @@ To test the API, first launch a local instance of the API on port `8181`. This c
 
 ```R
 library(plumber)
-plumber::plumb('plumber.R')$run(port = 8181)
+plumber::plumb('plumber.R')$run(port = 8080)
 ```
 
 Or you can run the Docker container (mapping the API on the port `8181`):
 
 ```sh
-docker run -d --rm --name gwasapi -p 8181:8080 utbiomet/gwasapi
+docker run -d --rm --name gwasapi -p 8080:8080 utbiomet/gwasapi
 ```
 
 Then run the script `tests/testthat.R`: 
