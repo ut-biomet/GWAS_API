@@ -307,6 +307,114 @@
     },
     "/manplot": {
       "get": {
+        "summary": "DEPRECATED. Please use `/manplot.html` or `/manplot.png`. All request sent to this endpoint will be redirect to `/manplot.html` for backward compatibility.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "gwas_url",
+            "description": "url of the result file saved by `/gwas` (json file)",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "adj_method",
+            "description": "p-value correction method: \"holm\", \"hochberg\", \"bonferroni\", \"BH\", \"BY\", \"fdr\", \"none\". Default: \"bonferroni\". (see https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/p.adjust for more details)",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "thresh_p",
+            "description": "p value significant threshold (default 0.05)",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "chr",
+            "description": "names of the chromosomes to show separated using comma. Show all chromosomes if nothing is specified.",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter_pAdj",
+            "description": "threshold to remove points with pAdj > filter_pAdj from the plot (default no filtering)",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "filter_nPoints",
+            "description": "threshold to keep only the filter_nPoints with the lowest p-values for the plot.",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "filter_quant",
+            "description": "threshold to keep only the filter_quant*100 % of the points with the lowest p-values for the plot (default no filtering)",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          }
+        ],
+        "tags": ["Plots"],
+        "deprecated": true
+      }
+    },
+    "/manplot.html": {
+      "get": {
         "summary": "Draw a Manhattan plot. This endpoint return the html code of a plotly interactive graph. By default only the 3000 points with the lowest p-values are display on the graph.",
         "responses": {
           "200": {
@@ -393,13 +501,111 @@
           },
           {
             "name": "filter_nPoints",
-            "description": "threshold to keep only the filter_nPoints with the lowest p-values for the plot (default 3000 points)",
+            "description": "threshold to keep only the filter_nPoints with the lowest p-values for the plot.",
             "in": "query",
             "required": false,
             "schema": {
               "type": "number",
               "format": "double",
               "default": 3000
+            }
+          },
+          {
+            "name": "filter_quant",
+            "description": "threshold to keep only the filter_quant*100 % of the points with the lowest p-values for the plot (default no filtering)",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "format": "double",
+              "default": 1
+            }
+          }
+        ],
+        "tags": ["Plots"]
+      }
+    },
+    "/manplot.png": {
+      "get": {
+        "summary": "Draw a Manhattan plot. This endpoint return png Image of the graph. By default all the points are display on the graph.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default response."
+          }
+        },
+        "parameters": [
+          {
+            "name": "gwas_url",
+            "description": "url of the result file saved by `/gwas` (json file)",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "adj_method",
+            "description": "p-value correction method: \"holm\", \"hochberg\", \"bonferroni\", \"BH\", \"BY\", \"fdr\", \"none\". Default: \"bonferroni\". (see https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/p.adjust for more details)",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "bonferroni"
+            }
+          },
+          {
+            "name": "thresh_p",
+            "description": "p value significant threshold (default 0.05)",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "format": "double",
+              "default": 0.05
+            }
+          },
+          {
+            "name": "chr",
+            "description": "names of the chromosomes to show separated using comma. Show all chromosomes if nothing is specified.",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter_pAdj",
+            "description": "threshold to remove points with pAdj > filter_pAdj from the plot (default no filtering)",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "format": "double",
+              "default": 1
+            }
+          },
+          {
+            "name": "filter_nPoints",
+            "description": "threshold to keep only the filter_nPoints with the lowest p-values for the plot.",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "format": "double",
+              "default": 1e+100
             }
           },
           {

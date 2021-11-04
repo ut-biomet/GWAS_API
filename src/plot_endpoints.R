@@ -32,7 +32,7 @@ manplot_params <- list(
     required = FALSE,
     isArray = FALSE),
   "filter_nPoints" = list(
-    desc = 'threshold to keep only the filter_nPoints with the lowest p-values for the plot (default 3000 points)',
+    desc = 'threshold to keep only the filter_nPoints with the lowest p-values for the plot.',
     type = "number",
     required = FALSE,
     isArray = FALSE),
@@ -43,82 +43,91 @@ manplot_params <- list(
     isArray = FALSE)
 )
 
-manplot_handler <- function(res,
-                            gwas_url,
-                            adj_method = "bonferroni",
-                            thresh_p = 0.05,
-                            chr = NA,
-                            filter_pAdj = 1,
-                            filter_nPoints = 3000,
-                            filter_quant = 1){
-  # # save call time.
-  # callTime <- Sys.time()
-  logger <- logger$new("/manplot")
-  out <- list(
-    inputParams = list(
-      gwas_url = gwas_url,
-      adj_method = adj_method,
-      thresh_p = as.character(thresh_p),
-      chr = chr
+create_manplot_handler <- function(interactive){
+
+  function(res,
+           gwas_url,
+           adj_method = "bonferroni",
+           thresh_p = 0.05,
+           chr = NA,
+           filter_pAdj = 1,
+           filter_nPoints = ifelse(interactive, 3000, 10^100),
+           filter_quant = 1){
+    # # save call time.
+    # callTime <- Sys.time()
+    if (interactive) {
+      logger <- logger$new("/manplot.html")
+    } else {
+      logger <- logger$new("/manplot.png")
+    }
+
+    out <- list(
+      inputParams = list(
+        gwas_url = gwas_url,
+        adj_method = adj_method,
+        thresh_p = as.character(thresh_p),
+        chr = chr
+      )
     )
-  )
 
-  logger$log("call with parameters:")
-  logger$log(time = FALSE, context = FALSE,
-             "gwas_url: ", gwas_url,"\n",
-             "\t adj_method: ", adj_method, "\n",
-             "\t thresh_p: ", thresh_p, "\n",
-             "\t chr: ", chr)
+    logger$log("call with parameters:")
+    logger$log(time = FALSE, context = FALSE,
+               "gwas_url: ", gwas_url,"\n",
+               "\t adj_method: ", adj_method, "\n",
+               "\t thresh_p: ", thresh_p, "\n",
+               "\t chr: ", chr)
 
 
-  ### CHECK PARAMETERS
-  # Convert to numeric
-  logger$log("Convert numeric parameters...")
-  if (!is.na(as.numeric(thresh_p))) {
-    thresh_p <- as.numeric(thresh_p)
-  } else {
-    logger$log('Error: "thresh_p" cannot be converted to numeric.')
-    res$status <- 400 # bad request
-    out$error <- '"thresh_p" should be a numeric value.'
-    logger$log('Exit with error code 400')
-    logger$log("END")
-    return(out)
+    ### CHECK PARAMETERS
+    # Convert to numeric
+    logger$log("Convert numeric parameters...")
+    if (!is.na(as.numeric(thresh_p))) {
+      thresh_p <- as.numeric(thresh_p)
+    } else {
+      logger$log('Error: "thresh_p" cannot be converted to numeric.')
+      res$status <- 400 # bad request
+      out$error <- '"thresh_p" should be a numeric value.'
+      logger$log('Exit with error code 400')
+      logger$log("END")
+      return(out)
+    }
+    if (!is.na(as.numeric(filter_quant))) {
+      filter_quant <- as.numeric(filter_quant)
+    } else {
+      logger$log('Error: "filter_quant" cannot be converted to numeric.')
+      res$status <- 400 # bad request
+      out$error <- '"filter_quant" should be a numeric value.'
+      logger$log('Exit with error code 400')
+      logger$log("END")
+      return(out)
+    }
+    logger$log("Convert numeric parameters DONE.")
+
+    # CREATE PLOT
+    logger$log("Create plot ...")
+    p <- draw_manhattanPlot(gwasFile = NULL,
+                            gwasUrl = gwas_url,
+                            adj_method = adj_method,
+                            thresh_p = thresh_p,
+                            chr = chr,
+                            interactive = interactive,
+                            filter_pAdj = filter_pAdj,
+                            filter_nPoints = filter_nPoints,
+                            filter_quant = filter_quant,
+                            outFile = NULL)
+    logger$log("Create plot DONE")
+
+    # RESPONSE
+    logger$log("Create response ... ")
+    res$status <- 200 # status for good GET response
+    logger$log("Create response DONE ")
+    logger$log("END")#,
+    # redis = TRUE,
+    # status = "DONE",
+    # action_type = "MANHANTTAN_PLOT")
+    p
   }
-  if (!is.na(as.numeric(filter_quant))) {
-    filter_quant <- as.numeric(filter_quant)
-  } else {
-    logger$log('Error: "filter_quant" cannot be converted to numeric.')
-    res$status <- 400 # bad request
-    out$error <- '"filter_quant" should be a numeric value.'
-    logger$log('Exit with error code 400')
-    logger$log("END")
-    return(out)
-  }
-  logger$log("Convert numeric parameters DONE.")
-
-  # CREATE PLOT
-  logger$log("Create plot ...")
-  p <- draw_manhattanPlot(gwasFile = NULL,
-                          gwasUrl = gwas_url,
-                          adj_method = adj_method,
-                          thresh_p = thresh_p,
-                          chr = chr,
-                          filter_pAdj = filter_pAdj,
-                          filter_nPoints = filter_nPoints,
-                          filter_quant = filter_quant)
-  logger$log("Create plot DONE")
-
-  # RESPONSE
-  logger$log("Create response ... ")
-  res$status <- 200 # status for good GET response
-  logger$log("Create response DONE ")
-  logger$log("END")#,
-  # redis = TRUE,
-  # status = "DONE",
-  # action_type = "MANHANTTAN_PLOT")
-  p
 }
-
 
 
 # /LDplot ----

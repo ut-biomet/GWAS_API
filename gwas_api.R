@@ -39,6 +39,14 @@ sapply(list.files("src/",
 # create initialization logger
 initLog <- logger$new("GWAS-API-INIT")
 
+
+# Define the default png serializer for the images
+my_serializer_png <- serializer_png(width = 40,
+                                    height = 30,
+                                    units = 'cm',
+                                    res = 177,
+                                    pointsize = 20)
+
 # create new plumber router
 initLog$log("create new router")
 gwasApi <- pr()
@@ -75,17 +83,28 @@ gwasApi$setApiSpec(
 
 # Set filters ----
 initLog$log("Set api filters")
+filterLogger <- logger$new("GWAS-API-REQUESTS")
 # Log some information about the incoming requests
 gwasApi <- gwasApi %>%
   pr_filter("logger",
             function(req){
-              logger <- logger$new("GWAS-API-REQUESTS")
+              logger <- filterLogger
               logger$log(req$REQUEST_METHOD, req$PATH_INFO, "-",
                          req$HTTP_USER_AGENT, "@", req$REMOTE_ADDR)
               plumber::forward()
             })
 
-
+# Redirect request sent to `/manplot` to `/manplot.html`
+gwasApi <- gwasApi %>%
+  pr_filter("redirect manplot",
+            function(req){
+              if (identical(req$PATH_INFO, "/manplot")) {
+                logger <- filterLogger
+                logger$log("Request to /manplot detected, redirect to /manplot.html")
+                req$PATH_INFO <- "/manplot.html"
+              }
+              plumber::forward()
+            })
 
 
 # Set endpoints ----
@@ -147,18 +166,41 @@ gwasApi <- gwasApi %>% pr_get(
 
 
 ## Plot endpoints ----
-
 ### /manplot ----
 initLog$log("Set `/manplot`")
 gwasApi <- gwasApi %>% pr_get(
   path = "/manplot",
   tags = "Plots",
-  comments = "Draw a Manhattan plot. This endpoint return the html code of a plotly interactive graph. By default only the 3000 points with the lowest p-values are display on the graph.",
+  comments = "DEPRECATED. Please use `/manplot.html` or `/manplot.png`. All request sent to this endpoint will be redirect to `/manplot.html` for backward compatibility.",
   params = manplot_params,
-  handler = manplot_handler,
+  handler = function(){
+    "You should not be able to see that, this endpoint have been deprecated."
+  },
   serializer = serializer_htmlwidget(),
 )
 
+### /manplot.html ----
+initLog$log("Set `/manplot.html`")
+gwasApi <- gwasApi %>% pr_get(
+  path = "/manplot.html",
+  tags = "Plots",
+  comments = "Draw a Manhattan plot. This endpoint return the html code of a plotly interactive graph. By default only the 3000 points with the lowest p-values are display on the graph.",
+  params = manplot_params,
+  handler = create_manplot_handler(interactive = TRUE),
+  serializer = serializer_htmlwidget(),
+)
+
+
+### /manplot.png ----
+initLog$log("Set `/manplot.png`")
+gwasApi <- gwasApi %>% pr_get(
+  path = "/manplot.png",
+  tags = "Plots",
+  comments = "Draw a Manhattan plot. This endpoint return png Image of the graph. By default all the points are display on the graph.",
+  params = manplot_params,
+  handler = create_manplot_handler(interactive = FALSE),
+  serializer = my_serializer_png,
+)
 
 
 ### /LDplot ----
@@ -169,7 +211,25 @@ gwasApi <- gwasApi %>% pr_get(
   comments = "Draw a LD plot. This endpoint return a png image.",
   params = LDplot_params,
   handler = LDplot_handler,
-  serializer = serializer_png(),
+  serializer = my_serializer_png,
 )
 
+
+# Mark deprecated endpoints ----
+
+
+initLog$log("Set deprecated endpoints")
+gwasApi$setApiSpec(
+  utils::modifyList(
+    gwasApi$getApiSpec(),
+    list(
+      paths = list(
+        `/manplot` = list(
+          get = list(
+            deprecated = TRUE)
+        )
+      )
+    )
+  )
+)
 

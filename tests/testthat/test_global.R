@@ -111,28 +111,37 @@ test_that("GET /adjustedResults", {
 
 
 # Test GET /manplot ----
-test_that("GET /manplot", {
+manplotExt <- c("", ".html", ".png")
 
-  # creat path and request
-  path <- paste0(host,"/manplot")
-  query <- list(
-     gwas_url = paste0(dtaPref, "/results/gwasResult.json"),
-     adj_method = "bonferroni",
-     thresh_p = 0.05
-     # chr = NA
-  )
+for (ext in manplotExt) {
+  test_that(paste0("GET /manplot", ext), {
+
+    # create path and request
+    path <- paste0(host, paste0("/manplot", ext))
+    query <- list(
+      gwas_url = paste0(dtaPref, "/results/gwasResult.json"),
+      adj_method = "bonferroni",
+      thresh_p = 0.05
+      # chr = NA
+    )
 
 
-  # send request
-  resp <- GET(path,
-              query = query)
+    # send request
+    resp <- GET(path,
+                query = query)
 
-  # test status
-  expect_equal(resp$status_code, 200)
+    # test status
+    expect_equal(resp$status_code, 200)
 
-  # test response content
-  expect_equal(resp$headers$`content-type`, "text/html; charset=UTF-8")
-})
+    # test response content
+    if (identical(ext, ".png")) {
+      expect_equal(resp$headers$`content-type`, "image/png")
+    } else {
+      expect_equal(resp$headers$`content-type`, "text/html; charset=UTF-8")
+    }
+  })
+}
+
 
 
 
