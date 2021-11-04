@@ -34,4 +34,4 @@ COPY . .
 EXPOSE 8080
 
 ENTRYPOINT []
-CMD R -e "api <- plumber::plumb('plumber.R'); api\$run(port = 8080, host = '0.0.0.0')"
+CMD R -e "source('gwas_api.R'); gwasApi\$run(port = 8080, host = '0.0.0.0')"

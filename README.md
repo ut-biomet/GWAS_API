@@ -9,7 +9,7 @@ This is a REST api wrapper around "GWAS-Engine". For more detailed documentation
 To generate the [`openapi.json`](./openapi.json) file one can run in `R`:
 
 ```R
-source("plumber.R")
+source("gwas_api.R")
 spec <- utils::modifyList(list(servers = list(list(url = ""))),
                                gwasApi$getApiSpec())
 writeLines(jsonlite::toJSON(spec,
@@ -54,8 +54,8 @@ docker exec -u 0 -it gwasapi bash
 To test the API, first launch a local instance of the API on port `8181`. This can be done through several ways, for example in `R` run:
 
 ```R
-library(plumber)
-plumber::plumb('plumber.R')$run(port = 8080)
+source('gwas_api.R');
+gwasApi$run(port = 8080, host = '0.0.0.0')
 ```
 
 Or you can run the Docker container (mapping the API on the port `8181`):
