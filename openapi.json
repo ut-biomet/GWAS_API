@@ -6,10 +6,17 @@
   ],
   "openapi": "3.0.3",
   "info": {
-    "description": "REST API for GWAS analysis",
     "title": "GWAS API",
-    "version": "0.0.1",
-    "contact": "@email juliendiot@ut-biomet.org"
+    "description": "REST API for GWAS analysis",
+    "contact": {
+      "name": "Laboratory of Biometry and Bioinformatics, Hiroyoshi Iwata",
+      "email": "iwata@ut-biomet.org"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    },
+    "version": "0.0.1"
   },
   "paths": {
     "/echo": {
@@ -64,7 +71,7 @@
     },
     "/version": {
       "get": {
-        "summary": "give information about current API version",
+        "summary": "Give information about current API version",
         "responses": {
           "200": {
             "description": "OK",
@@ -188,8 +195,8 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "number",
-              "format": "double",
+              "type": "integer",
+              "format": "int64",
               "default": 0
             }
           },
@@ -205,7 +212,7 @@
           },
           {
             "name": "thresh_maf",
-            "description": "Threshold for filtering markers. Only markers with minor allele frequency > `thresh_maf` will be kept.",
+            "description": "Threshold for filtering markers. Only markers with minor allele frequency > `thresh_maf` will be kept for the GWAS analysis. (default 0.05)",
             "in": "query",
             "required": false,
             "schema": {
@@ -278,9 +285,10 @@
             "name": "adj_method",
             "description": "correction method: \"holm\", \"hochberg\", \"bonferroni\", \"BH\", \"BY\", \"fdr\", \"none\". Default: \"bonferroni\". (see https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/p.adjust for more details)",
             "in": "query",
-            "required": true,
+            "required": false,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "default": "bonferroni"
             }
           },
           {
@@ -289,7 +297,8 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string"
+              "type": "number",
+              "format": "double"
             }
           }
         ],
@@ -345,9 +354,10 @@
             "name": "adj_method",
             "description": "p-value correction method: \"holm\", \"hochberg\", \"bonferroni\", \"BH\", \"BY\", \"fdr\", \"none\". Default: \"bonferroni\". (see https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/p.adjust for more details)",
             "in": "query",
-            "required": true,
+            "required": false,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "default": "bonferroni"
             }
           },
           {
@@ -372,7 +382,7 @@
           },
           {
             "name": "filter_pAdj",
-            "description": "[numeric] threshold to remove points with pAdj > filter_pAdj from the plot (default no filtering)",
+            "description": "threshold to remove points with pAdj > filter_pAdj from the plot (default no filtering)",
             "in": "query",
             "required": false,
             "schema": {
@@ -383,7 +393,7 @@
           },
           {
             "name": "filter_nPoints",
-            "description": "[numeric] threshold to keep only the filter_nPoints with the lowest p-values for the plot (default 3000 points)",
+            "description": "threshold to keep only the filter_nPoints with the lowest p-values for the plot (default 3000 points)",
             "in": "query",
             "required": false,
             "schema": {
@@ -394,7 +404,7 @@
           },
           {
             "name": "filter_quant",
-            "description": "[numeric] threshold to keep only the filter_quant*100 % of the points with the lowest p-values for the plot (default no filtering)",
+            "description": "threshold to keep only the filter_quant*100 % of the points with the lowest p-values for the plot (default no filtering)",
             "in": "query",
             "required": false,
             "schema": {
@@ -444,7 +454,8 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -453,7 +464,8 @@
             "in": "query",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],

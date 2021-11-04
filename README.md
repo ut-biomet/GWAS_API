@@ -9,9 +9,9 @@ This is a REST api wrapper around "GWAS-Engine". For more detailed documentation
 To generate the [`openapi.json`](./openapi.json) file one can run in `R`:
 
 ```R
-pr <- plumber::plumb(file='plumber.R')
+source("plumber.R")
 spec <- utils::modifyList(list(servers = list(list(url = ""))),
-                               pr$getApiSpec())
+                               gwasApi$getApiSpec())
 writeLines(jsonlite::toJSON(spec,
                             complex = "list",
                             auto_unbox = TRUE,
