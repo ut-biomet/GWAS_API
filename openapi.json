@@ -307,7 +307,7 @@
     },
     "/manplot": {
       "get": {
-        "summary": "DEPRECATED. Please use `/manplot.html` or `/manplot.png`. All request sent to this endpoint will be redirect to `/manplot.html` for backward compatibility.",
+        "summary": "Identical to `/manplot.html`",
         "responses": {
           "200": {
             "description": "OK",
@@ -409,8 +409,7 @@
             }
           }
         ],
-        "tags": ["Plots"],
-        "deprecated": true
+        "tags": ["Plots"]
       }
     },
     "/manplot.html": {

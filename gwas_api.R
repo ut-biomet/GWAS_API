@@ -171,7 +171,7 @@ initLog$log("Set `/manplot`")
 gwasApi <- gwasApi %>% pr_get(
   path = "/manplot",
   tags = "Plots",
-  comments = "DEPRECATED. Please use `/manplot.html` or `/manplot.png`. All request sent to this endpoint will be redirect to `/manplot.html` for backward compatibility.",
+  comments = "Identical to `/manplot.html`",
   params = manplot_params,
   handler = function(){
     "You should not be able to see that, this endpoint have been deprecated."
@@ -213,23 +213,3 @@ gwasApi <- gwasApi %>% pr_get(
   handler = LDplot_handler,
   serializer = my_serializer_png,
 )
-
-
-# Mark deprecated endpoints ----
-
-
-initLog$log("Set deprecated endpoints")
-gwasApi$setApiSpec(
-  utils::modifyList(
-    gwasApi$getApiSpec(),
-    list(
-      paths = list(
-        `/manplot` = list(
-          get = list(
-            deprecated = TRUE)
-        )
-      )
-    )
-  )
-)
-
