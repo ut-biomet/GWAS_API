@@ -91,6 +91,26 @@ create_manplot_handler <- function(interactive){
       logger$log("END")
       return(out)
     }
+    if (!is.na(as.numeric(filter_pAdj))) {
+      filter_pAdj <- as.numeric(filter_pAdj)
+    } else {
+      logger$log('Error: "filter_pAdj" cannot be converted to numeric.')
+      res$status <- 400 # bad request
+      out$error <- '"filter_pAdj" should be a numeric value.'
+      logger$log('Exit with error code 400')
+      logger$log("END")
+      return(out)
+    }
+    if (!is.na(as.numeric(filter_nPoints))) {
+      filter_nPoints <- as.numeric(filter_nPoints)
+    } else {
+      logger$log('Error: "filter_nPoints" cannot be converted to numeric.')
+      res$status <- 400 # bad request
+      out$error <- '"filter_nPoints" should be a numeric value.'
+      logger$log('Exit with error code 400')
+      logger$log("END")
+      return(out)
+    }
     if (!is.na(as.numeric(filter_quant))) {
       filter_quant <- as.numeric(filter_quant)
     } else {
