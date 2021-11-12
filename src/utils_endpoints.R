@@ -16,10 +16,21 @@ echo_params <- list(
 
 echo_handler <- function(msg=""){
   logger <- logger$new("/echo")
+  inputParamsNames <- names(formals(rlang::current_fn()))
+  inputParamsNames <- inputParamsNames[!inputParamsNames %in% c('res')]
+  inputParams <- as.list(environment())[inputParamsNames]
+
+  out <- list(
+    inputParams = inputParams
+  )
+
   logger$log("call with parameters:")
-  logger$log("msg: ", msg,
-             time = FALSE, context = FALSE)
-  list(msg = paste0("The message is: '", msg, "'"))
+  logger$log(time = FALSE, context = FALSE,
+             paste0(names(out$inputParams), ": ", out$inputParams,
+                    collapse = '\n\t')
+  )
+
+    list(msg = paste0("The message is: '", msg, "'"))
 }
 
 # /version ----

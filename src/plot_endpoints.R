@@ -61,21 +61,19 @@ create_manplot_handler <- function(interactive){
       logger <- logger$new("/manplot.png")
     }
 
-    out <- list(
-      inputParams = list(
-        gwas_url = gwas_url,
-        adj_method = adj_method,
-        thresh_p = as.character(thresh_p),
-        chr = chr
-      )
-    )
+  inputParamsNames <- names(formals(rlang::current_fn()))
+  inputParamsNames <- inputParamsNames[!inputParamsNames %in% c('res')]
+  inputParams <- as.list(environment())[inputParamsNames]
 
-    logger$log("call with parameters:")
-    logger$log(time = FALSE, context = FALSE,
-               "gwas_url: ", gwas_url,"\n",
-               "\t adj_method: ", adj_method, "\n",
-               "\t thresh_p: ", thresh_p, "\n",
-               "\t chr: ", chr)
+  out <- list(
+    inputParams = inputParams
+  )
+
+  logger$log("call with parameters:")
+  logger$log(time = FALSE, context = FALSE,
+             paste0(names(out$inputParams), ": ", out$inputParams,
+                    collapse = '\n\t')
+  )
 
 
     ### CHECK PARAMETERS
@@ -171,19 +169,21 @@ LDplot_params <- list(
 
 LDplot_handler <- function(res, geno_url, from, to){
   logger <- logger$new("/LDplot")
+
+  inputParamsNames <- names(formals(rlang::current_fn()))
+  inputParamsNames <- inputParamsNames[!inputParamsNames %in% c('res')]
+  inputParams <- as.list(environment())[inputParamsNames]
+
   out <- list(
-    inputParams = list(
-      geno_url = geno_url,
-      from = from,
-      to = to
-    )
+    inputParams = inputParams
   )
 
   logger$log("call with parameters:")
-  logger$log(time=FALSE, context=FALSE,
-             "geno_url: ", geno_url,"\n",
-             "\t from: ", from, "\n",
-             "\t to: ", to)
+  logger$log(time = FALSE, context = FALSE,
+             paste0(names(out$inputParams), ": ", out$inputParams,
+                    collapse = '\n\t')
+  )
+
 
   ### CHECK PARAMETERS
   # Convert to numeric

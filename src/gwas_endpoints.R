@@ -68,29 +68,19 @@ gwas_handler <- function(res,
   logger <- logger$new("/gwas")
   # save call time.
   callTime <- Sys.time()
+  inputParamsNames <- names(formals(rlang::current_fn()))
+  inputParamsNames <- inputParamsNames[!inputParamsNames %in% c('res')]
+  inputParams <- as.list(environment())[inputParamsNames]
+
   out <- list(
-    inputParams = list(
-      geno_url = geno_url,
-      pheno_url = pheno_url,
-      upload_url = upload_url,
-      trait = trait,
-      test = test,
-      fixed = as.character(fixed),
-      thresh_maf = as.character(thresh_maf),
-      thresh_callrate = as.character(thresh_callrate)
-    )
+    inputParams = inputParams
   )
-  # TODO ask Shuei if it is nessesary to specify that parameters used default values (for fixed, thresh_maf, thresh_callrate)
 
   logger$log("call with parameters:")
   logger$log(time = FALSE, context = FALSE,
-             "geno_url: ", geno_url,"\n",
-             "\t pheno_url: ", pheno_url, "\n",
-             "\t trait: ", trait, "\n",
-             "\t test: ", test, "\n",
-             "\t fixed: ", fixed, "\n",
-             "\t thresh_maf: ", thresh_maf, "\n",
-             "\t thresh_callrate: ", thresh_callrate)
+             paste0(names(out$inputParams), ": ", out$inputParams,
+                    collapse = '\n\t')
+  )
 
 
   ### CHECK PARAMETERS
