@@ -292,13 +292,36 @@
             }
           },
           {
-            "name": "thresh_p",
-            "description": "threshold for filtering non-significative markers. If not specify return all the values",
+            "name": "filter_pAdj",
+            "description": "threshold to remove points with pAdj > filter_pAdj from the plot (default no filtering)",
             "in": "query",
             "required": false,
             "schema": {
               "type": "number",
-              "format": "double"
+              "format": "double",
+              "default": 1
+            }
+          },
+          {
+            "name": "filter_nPoints",
+            "description": "threshold to keep only the filter_nPoints with the lowest p-values for the plot.",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "format": "double",
+              "default": 1e+100
+            }
+          },
+          {
+            "name": "filter_quant",
+            "description": "threshold to keep only the filter_quant*100 % of the points with the lowest p-values for the plot (default no filtering)",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "format": "double",
+              "default": 1
             }
           }
         ],

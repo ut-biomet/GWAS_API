@@ -242,41 +242,48 @@ adjustedResults_params <- list(
     type = "string",
     required = FALSE,
     isArray = FALSE),
-  "thresh_p" = list(
-    desc = "threshold for filtering non-significative markers. If not specify return all the values",
+  "filter_pAdj" = list(
+    desc = 'threshold to remove points with pAdj > filter_pAdj from the plot (default no filtering)',
+    type = "number",
+    required = FALSE,
+    isArray = FALSE),
+  "filter_nPoints" = list(
+    desc = 'threshold to keep only the filter_nPoints with the lowest p-values for the plot.',
+    type = "number",
+    required = FALSE,
+    isArray = FALSE),
+  "filter_quant" = list(
+    desc = 'threshold to keep only the filter_quant*100 % of the points with the lowest p-values for the plot (default no filtering)',
     type = "number",
     required = FALSE,
     isArray = FALSE)
 )
 
-adjustedResults_handler <- function(res, gwas_url, adj_method = "bonferroni", thresh_p = NA){
+adjustedResults_handler <- function(res,
+                                    gwas_url,
+                                    adj_method = "bonferroni",
+                                    filter_pAdj = 1,
+                                    filter_nPoints = 10^100,
+                                    filter_quant = 1) {
   logger <- logger$new("/adjustedResults")
+  inputParamsNames <- names(formals(rlang::current_fn()))
+  inputParamsNames <- inputParamsNames[!inputParamsNames %in% c('res')]
+  inputParams <- as.list(environment())[inputParamsNames]
+
   out <- list(
-    inputParams = list(
-      gwas_url = gwas_url,
-      adj_method = adj_method,
-      thresh_p = as.character(thresh_p)
-    )
+    inputParams = inputParams
   )
 
   logger$log("call with parameters:")
   logger$log(time = FALSE, context = FALSE,
-             "gwas_url: ", gwas_url,"\n",
-             "\t adj_method: ", adj_method, "\n",
-             "\t thresh_p: ", thresh_p)
+             paste0(names(out$inputParams), ": ", out$inputParams,
+                    collapse = '\n\t')
+  )
 
 
   ### CHECK PARAMETERS
   # Convert to numeric
   logger$log("Convert numeric parameters...")
-  if (!is.na(as.numeric(thresh_p)) | is.na(thresh_p)) {
-    thresh_p <- as.numeric(thresh_p)
-  } else {
-    logger$log('Error: "thresh_p" cannot be converted to numeric.')
-    res$status <- 400 # bad request
-    out$error <- '"thresh_p" should be a numeric value.'
-    return(out)
-  }
   logger$log("Convert numeric parameters DONE.")
 
 
@@ -284,17 +291,15 @@ adjustedResults_handler <- function(res, gwas_url, adj_method = "bonferroni", th
   logger$log("Adjust p-values ...")
   adj_gwas <- run_resAdjustment(gwasFile = NULL,
                                 gwasUrl = gwas_url,
-                                adj_method = "bonferroni")
+                                adj_method = "bonferroni",
+                                filter_pAdj = filter_pAdj,
+                                filter_nPoints = filter_nPoints,
+                                filter_quant = filter_quant)
   dta <- jsonlite::fromJSON(adj_gwas$gwasAdjusted)
   logger$log("Adjust p-values DONE")
 
   ### RESPONSE
   logger$log("Create response ... ")
-  if (is.na(thresh_p)) {
-    dta <- dta
-  } else {
-    dta <- dta[dta$p_adj <= thresh_p, ]
-  }
   gwasList <- list(gwasAdjusted = dta,
                    metadata = adj_gwas$metadata)
   out <- jsonlite::toJSON(gwasList,

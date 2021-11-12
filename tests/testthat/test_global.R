@@ -82,7 +82,10 @@ test_that("GET /adjustedResults", {
   path <- paste0(host,"/adjustedResults")
   query <- list(
     gwas_url = paste0(dtaPref, "/results/gwasResult.json"),
-    adj_method = "bonferroni")
+    adj_method = "bonferroni",
+    filter_pAdj = 1,
+    filter_nPoints = 3000,
+    filter_quant = 1)
 
   # send request
   resp <- GET(path, query = query)
