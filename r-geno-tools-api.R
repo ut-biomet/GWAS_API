@@ -20,24 +20,24 @@ cat(as.character(Sys.time()), "-",
     "Load `plumber` package","\n")
 library(plumber)
 
-# load gwas-engine functions
+# load r-geno-tools-engine functions
 cat(as.character(Sys.time()), "-",
-    "Load `gwas-engine`","\n")
-sapply(list.files("GWAS-Engine/src/",
+    "Load `r-geno-tools-engine`","\n")
+sapply(list.files("r-geno-tools-engine/src/",
                   pattern = "\\.R$", # all files ending by ".R"
                   full.names = TRUE),
        source)
 
-# load gwas-api functions
+# load r-geno-tools-api functions
 cat(as.character(Sys.time()), "-",
-    "Load `gwas-api`'s functions","\n")
+    "Load `r-geno-tools-api`'s functions","\n")
 sapply(list.files("src/",
                   pattern = "\\.R$", # all files ending by ".R"
                   full.names = TRUE),
        source)
 
 # create initialization logger
-initLog <- logger$new("GWAS-API-INIT")
+initLog <- logger$new("r-geno-tools-api-INIT")
 
 
 # Define the default png serializer for the images
@@ -49,7 +49,7 @@ my_serializer_png <- serializer_png(width = 40,
 
 # create new plumber router
 initLog$log("create new router")
-gwasApi <- pr()
+genoApi <- pr()
 
 
 
@@ -57,7 +57,7 @@ gwasApi <- pr()
 
 # Set api description ----
 initLog$log("Set api description")
-gwasApi$setApiSpec(
+genoApi$setApiSpec(
   function(spec) {
     spec$info <- list(
       title = "GWAS API",
@@ -83,9 +83,9 @@ gwasApi$setApiSpec(
 
 # Set filters ----
 initLog$log("Set api filters")
-filterLogger <- logger$new("GWAS-API-REQUESTS")
+filterLogger <- logger$new("r-geno-tools-api-REQUESTS")
 # Log some information about the incoming requests
-gwasApi <- gwasApi %>%
+genoApi <- genoApi %>%
   pr_filter("logger",
             function(req){
               logger <- filterLogger
@@ -95,7 +95,7 @@ gwasApi <- gwasApi %>%
             })
 
 # Redirect request sent to `/manplot` to `/manplot.html`
-gwasApi <- gwasApi %>%
+genoApi <- genoApi %>%
   pr_filter("redirect manplot",
             function(req){
               if (identical(req$PATH_INFO, "/manplot")) {
@@ -113,7 +113,7 @@ initLog$log("Set api endpoints")
 ## Utils endpoints----
 initLog$log("Set `/echo`")
 ### /echo ----
-gwasApi <- gwasApi %>% pr_get(
+genoApi <- genoApi %>% pr_get(
   path = "/echo",
   tags = "Utils",
   comments = "Echo back the input",
@@ -125,7 +125,7 @@ gwasApi <- gwasApi %>% pr_get(
 
 ### /version ----
 initLog$log("Set `/version`")
-gwasApi <- gwasApi %>% pr_get(
+genoApi <- genoApi %>% pr_get(
   path = "/version",
   tags = "Utils",
   comments = "Give information about current API version",
@@ -141,7 +141,7 @@ gwasApi <- gwasApi %>% pr_get(
 ## GWAS endpoints ----
 ### /gwas ----
 initLog$log("Set `/gwas`")
-gwasApi <- gwasApi %>% pr_post(
+genoApi <- genoApi %>% pr_post(
   path = "/gwas",
   tags = "GWAS",
   comments = "Fit a GWAS model. This endpoint take Urls of geno and pheno data (and values of other GWAS parameters) and write an a json file to the give Url using a PUT request. It had been disign to work with amazon S3 services.",
@@ -154,7 +154,7 @@ gwasApi <- gwasApi %>% pr_post(
 
 ### /adjustedResults ----
 initLog$log("Set `/adjustedResults`")
-gwasApi <- gwasApi %>% pr_get(
+genoApi <- genoApi %>% pr_get(
   path = "/adjustedResults",
   tags = "GWAS",
   comments = "Adjusted results. This endpoint calculate the adjusted p-values of the gwas analysis and return all the results or only the significant adjusted p-value. The results are return in json format.",
@@ -168,7 +168,7 @@ gwasApi <- gwasApi %>% pr_get(
 ## Plot endpoints ----
 ### /manplot ----
 initLog$log("Set `/manplot`")
-gwasApi <- gwasApi %>% pr_get(
+genoApi <- genoApi %>% pr_get(
   path = "/manplot",
   tags = "Plots",
   comments = "Identical to `/manplot.html`",
@@ -181,7 +181,7 @@ gwasApi <- gwasApi %>% pr_get(
 
 ### /manplot.html ----
 initLog$log("Set `/manplot.html`")
-gwasApi <- gwasApi %>% pr_get(
+genoApi <- genoApi %>% pr_get(
   path = "/manplot.html",
   tags = "Plots",
   comments = "Draw a Manhattan plot. This endpoint return the html code of a plotly interactive graph. By default only the 3000 points with the lowest p-values are display on the graph.",
@@ -193,7 +193,7 @@ gwasApi <- gwasApi %>% pr_get(
 
 ### /manplot.png ----
 initLog$log("Set `/manplot.png`")
-gwasApi <- gwasApi %>% pr_get(
+genoApi <- genoApi %>% pr_get(
   path = "/manplot.png",
   tags = "Plots",
   comments = "Draw a Manhattan plot. This endpoint return png Image of the graph. By default all the points are display on the graph.",
@@ -205,7 +205,7 @@ gwasApi <- gwasApi %>% pr_get(
 
 ### /LDplot ----
 initLog$log("Set `/LDplot`")
-gwasApi <- gwasApi %>% pr_get(
+genoApi <- genoApi %>% pr_get(
   path = "/LDplot",
   tags = "Plots",
   comments = "Draw a LD plot. This endpoint return a png image.",

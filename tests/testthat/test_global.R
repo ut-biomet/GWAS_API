@@ -2,7 +2,7 @@
 # 2020 The University of Tokyo
 #
 # Description:
-# Test file for GWAS_API
+# Test file for r-geno-tools-api
 
 # init ----
 # create tempoary folder

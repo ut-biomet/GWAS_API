@@ -52,7 +52,7 @@ version_handler <- function(){
   apiRfiles <- c(
     dir(".", recursive = FALSE,
         full.names = TRUE, all.files = TRUE, pattern = ".R$"),
-    dir("GWAS-Engine/src/", recursive = TRUE,
+    dir("r-geno-tools-engine/src/", recursive = TRUE,
         full.names = TRUE, all.files = TRUE, pattern = ".R$"),
     dir("src/", recursive = TRUE,
         full.names = TRUE, all.files = TRUE, pattern = ".R$")

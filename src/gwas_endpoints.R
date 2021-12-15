@@ -184,7 +184,7 @@ gwas_handler <- function(res,
                  putResult$status)
       res$status <- putResult$status_code
       out <- as_list(content(putResult))
-      out$GWAS_API_error <- "error PUT request didn't get status code 200"
+      out$r_geno_tools_api_error <- "error PUT request didn't get status code 200"
       logger$log('Exit with error code ', putResult$status)
       logger$log("END")
       return(out)

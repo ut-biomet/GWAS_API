@@ -12,9 +12,9 @@ host <- paste0("http://", ip, ":", port)
 
 docker <- TRUE
 if (docker) {
-    dtaPref <- "file:///GWAS_API/GWAS-Engine/data"
+    dtaPref <- "file:///r-geno-tools-api/r-geno-tools-engine/data"
 } else {
-    dtaPref <- paste0( "file://", getwd(), "/GWAS-Engine/data")
+    dtaPref <- paste0( "file://", getwd(), "/r-geno-tools-engine/data")
 }
 
 # Check if the API is available
