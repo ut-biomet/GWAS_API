@@ -14,7 +14,7 @@ docker <- TRUE
 if (docker) {
     dtaPref <- "file:///r-geno-tools-api/r-geno-tools-engine/data"
 } else {
-    dtaPref <- paste0( "file://", getwd(), "/r-geno-tools-engine/data")
+    dtaPref <- paste0("file://", getwd(), "/r-geno-tools-engine/data")
 }
 
 # Check if the API is available

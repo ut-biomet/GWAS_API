@@ -119,7 +119,7 @@ genoApi <- genoApi %>% pr_get(
   comments = "Echo back the input",
   params = echo_params,
   handler = echo_handler,
-  serializer = serializer_unboxed_json(),
+  serializer = serializer_unboxed_json()
 )
 
 
@@ -131,7 +131,7 @@ genoApi <- genoApi %>% pr_get(
   comments = "Give information about current API version",
   params = version_params,
   handler = version_handler,
-  serializer = serializer_unboxed_json(),
+  serializer = serializer_unboxed_json()
 )
 
 
@@ -147,7 +147,7 @@ genoApi <- genoApi %>% pr_post(
   comments = "Fit a GWAS model. This endpoint take Urls of geno and pheno data (and values of other GWAS parameters) and write an a json file to the give Url using a PUT request. It had been disign to work with amazon S3 services.",
   params = gwas_params,
   handler = gwas_handler,
-  serializer = serializer_unboxed_json(),
+  serializer = serializer_unboxed_json()
 )
 
 
@@ -160,7 +160,7 @@ genoApi <- genoApi %>% pr_get(
   comments = "Adjusted results. This endpoint calculate the adjusted p-values of the gwas analysis and return all the results or only the significant adjusted p-value. The results are return in json format.",
   params = adjustedResults_params,
   handler = adjustedResults_handler,
-  serializer = serializer_unboxed_json(),
+  serializer = serializer_unboxed_json()
 )
 
 
@@ -176,7 +176,7 @@ genoApi <- genoApi %>% pr_get(
   handler = function(){
     "You should not be able to see that, this endpoint have been deprecated."
   },
-  serializer = serializer_htmlwidget(),
+  serializer = serializer_htmlwidget()
 )
 
 ### /manplot.html ----
@@ -187,7 +187,7 @@ genoApi <- genoApi %>% pr_get(
   comments = "Draw a Manhattan plot. This endpoint return the html code of a plotly interactive graph. By default only the 3000 points with the lowest p-values are display on the graph.",
   params = manplot_params,
   handler = create_manplot_handler(interactive = TRUE),
-  serializer = serializer_htmlwidget(),
+  serializer = serializer_htmlwidget()
 )
 
 
@@ -199,7 +199,7 @@ genoApi <- genoApi %>% pr_get(
   comments = "Draw a Manhattan plot. This endpoint return png Image of the graph. By default all the points are display on the graph.",
   params = manplot_params,
   handler = create_manplot_handler(interactive = FALSE),
-  serializer = my_serializer_png,
+  serializer = my_serializer_png
 )
 
 
@@ -211,5 +211,5 @@ genoApi <- genoApi %>% pr_get(
   comments = "Draw a LD plot. This endpoint return a png image.",
   params = LDplot_params,
   handler = LDplot_handler,
-  serializer = my_serializer_png,
+  serializer = my_serializer_png
 )
