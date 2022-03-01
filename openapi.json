@@ -699,6 +699,237 @@
         ],
         "tags": ["Plots"]
       }
+    },
+    "/pedNetwork": {
+      "get": {
+        "summary": "Draw interactive pedigree network",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ped_url",
+            "description": "url of the pedigree file (.csv)",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "header",
+            "description": "a logical value indicating whether the file contains the names of the variables as its first line. The default value is TRUE. In any cases, the column 1 will be interpreted as the individual id, column 2 as the first parent, column 3 as the second parent.",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": true
+            }
+          },
+          {
+            "name": "unknown_string",
+            "description": "a character vector of strings which are to be interpreted as \"unknown parent\". By default: missing value in the file.",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "tags": ["Plots"]
+      }
+    },
+    "/relmat-ped": {
+      "post": {
+        "summary": "Calculate a pedigree relationship matrix. This endpoint take Urls of a pedigree file and write an a json file to the give Url using a PUT request. It had been disign to work with amazon S3 services.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ped_url",
+            "description": "url of the pedigree file (.csv)",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "upload_url",
+            "description": "url of the PUT request for saving the results",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "header",
+            "description": "a logical value indicating whether the file contains the names of the variables as its first line. The default value is TRUE. In any cases, the column 1 will be interpreted as the individual id, column 2 as the first parent, column 3 as the second parent.",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": true
+            }
+          },
+          {
+            "name": "unknown_string",
+            "description": "a character vector of strings which are to be interpreted as \"unknown parent\". By default: missing value in the file.",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": ""
+            }
+          }
+        ],
+        "tags": ["Relationship matrix"]
+      }
+    },
+    "/relmat-heatmap.html": {
+      "get": {
+        "summary": "Draw a heatmap of a relationship matrix.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "relmat_url",
+            "description": "url of the relationship matrix file (.json)",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": ["Plots"]
+      }
+    },
+    "/relmat-heatmap.png": {
+      "get": {
+        "summary": "Draw a heatmap of a relationship matrix.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default response."
+          }
+        },
+        "parameters": [
+          {
+            "name": "relmat_url",
+            "description": "url of the relationship matrix file (.json)",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": ["Plots"]
+      }
     }
   },
   "tags": [

@@ -11,7 +11,7 @@ To generate the [`openapi.json`](./openapi.json) file one can run in `R`:
 ```R
 source("r-geno-tools-api.R")
 spec <- utils::modifyList(list(servers = list(list(url = ""))),
-                               rgenotoolapi$getApiSpec())
+                               genoApi$getApiSpec())
 writeLines(jsonlite::toJSON(spec,
                             complex = "list",
                             auto_unbox = TRUE,
@@ -55,7 +55,7 @@ To test the API, first launch a local instance of the API on port `8181`. This c
 
 ```R
 source('r-geno-tools-api.R');
-rgenotoolapi$run(port = 8080, host = '0.0.0.0')
+genoApi$run(port = 8080, host = '0.0.0.0')
 ```
 
 Or you can run the Docker container (mapping the API on the port `8181`):
@@ -75,6 +75,7 @@ For manually testing, you can use these urls when the api is running in docker:
 file:///r-geno-tools-api/r-geno-tools-engine/data/results/gwasResult.json
 file:///r-geno-tools-api/r-geno-tools-engine/data/geno/testMarkerData01.vcf.gz
 file:///r-geno-tools-api/r-geno-tools-engine/data/pheno/testPhenoData01.csv
+file:///r-geno-tools-api/r-geno-tools-engine/data/pedigree/testPedData_char.csv.csv
 ```
 
 For trait this one is in the pheno file: `Flowering.time.at.Arkansas`

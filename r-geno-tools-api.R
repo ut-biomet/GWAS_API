@@ -213,3 +213,50 @@ genoApi <- genoApi %>% pr_get(
   handler = LDplot_handler,
   serializer = my_serializer_png
 )
+
+
+
+### /pedNetwork ----
+initLog$log("Set `/pedNetwork`")
+genoApi <- genoApi %>% pr_get(
+  path = "/pedNetwork",
+  tags = "Plots",
+  comments = "Draw interactive pedigree network",
+  params = pedNetwork_params,
+  handler = pedNetwork_handler,
+  serializer = serializer_htmlwidget()
+)
+
+
+### /relmat-ped ----
+initLog$log("Set `/relmat-ped`")
+genoApi <- genoApi %>% pr_post(
+  path = "/relmat-ped",
+  tags = "Relationship matrix",
+  comments = "Calculate a pedigree relationship matrix. This endpoint take Urls of a pedigree file and write an a json file to the give Url using a PUT request. It had been disign to work with amazon S3 services.",
+  params = relmatped_params,
+  handler = relmatped_handler,
+  serializer = serializer_unboxed_json()
+)
+
+### /relmat-heatmap.html ----
+initLog$log("Set `/relmat-heatmap.html`")
+genoApi <- genoApi %>% pr_get(
+  path = "/relmat-heatmap.html",
+  tags = "Plots",
+  comments = "Draw a heatmap of a relationship matrix.",
+  params = relmatHeatmap_params,
+  handler = create_relmatHeatmap_handler(interactive = TRUE),
+  serializer = serializer_htmlwidget()
+)
+
+### /relmat-heatmap.png ----
+initLog$log("Set `/relmat-heatmap.png`")
+genoApi <- genoApi %>% pr_get(
+  path = "/relmat-heatmap.png",
+  tags = "Plots",
+  comments = "Draw a heatmap of a relationship matrix.",
+  params = relmatHeatmap_params,
+  handler = create_relmatHeatmap_handler(interactive = FALSE),
+  serializer = my_serializer_png
+)

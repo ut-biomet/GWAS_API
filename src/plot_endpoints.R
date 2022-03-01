@@ -253,3 +253,105 @@ LDplot_handler <- function(res, geno_url, from, to){
   # action_type = "LD_PLOT")
   # p
 }
+
+
+# /pedNetwork ----
+pedNetwork_params <- list(
+  "ped_url" = list(
+    desc = "url of the pedigree file (.csv)",
+    type = "string",
+    required = TRUE,
+    isArray = FALSE),
+  "header" = list(
+    desc = 'a logical value indicating whether the file contains the names of the variables as its first line. The default value is TRUE. In any cases, the column 1 will be interpreted as the individual id, column 2 as the first parent, column 3 as the second parent.',
+    type = "string",
+    required = FALSE,
+    isArray = FALSE),
+  "unknown_string" = list(
+    desc = 'a character vector of strings which are to be interpreted as "unknown parent". By default: missing value in the file.',
+    type = "string",
+    required = TRUE,
+    isArray = FALSE)
+)
+
+pedNetwork_handler <- function(res, ped_url, header = TRUE, unknown_string = ''){
+  logger <- logger$new("/pedNetwork")
+
+  inputParamsNames <- names(formals(rlang::current_fn()))
+  inputParamsNames <- inputParamsNames[!inputParamsNames %in% c('res')]
+  inputParams <- as.list(environment())[inputParamsNames]
+
+  out <- list(
+    inputParams = inputParams
+  )
+
+  logger$log("call with parameters:")
+  logger$log(time = FALSE, context = FALSE,
+             paste0(names(out$inputParams), ": ", out$inputParams,
+                    collapse = '\n\t')
+  )
+
+
+  logger$log('Draw pedigree network plot ...')
+  p <- draw_pedNetwork(pedUrl = ped_url,
+                       unknown_string = unknown_string,
+                       header = header,
+                       outFile = NULL)
+  logger$log('Draw pedigree network plot DONE')
+
+  logger$log("Create response ... ")
+  res$status <- 200 # status for good GET response
+  logger$log("Create response DONE ")
+  logger$log("END")
+
+  p
+}
+
+
+
+
+# /relmat-heatmap ----
+relmatHeatmap_params <- list(
+  "relmat_url" = list(
+    desc = "url of the relationship matrix file (.json)",
+    type = "string",
+    required = TRUE,
+    isArray = FALSE)
+)
+
+
+create_relmatHeatmap_handler <- function(interactive){
+
+  function(res, relmat_url){
+    logger <- logger$new("/relmat-heatmap")
+
+    inputParamsNames <- names(formals(rlang::current_fn()))
+    inputParamsNames <- inputParamsNames[!inputParamsNames %in% c('res')]
+    inputParams <- as.list(environment())[inputParamsNames]
+
+    out <- list(
+      inputParams = inputParams
+    )
+
+    logger$log("call with parameters:")
+    logger$log(time = FALSE, context = FALSE,
+               paste0(names(out$inputParams), ": ", out$inputParams,
+                      collapse = '\n\t')
+    )
+
+
+    logger$log('Draw relationship heatmap plot ...')
+    p <- draw_relHeatmap(relMatUrl = relmat_url,
+                         format = 'json',
+                         interactive = interactive,
+                         outFile = NULL)
+    logger$log('Draw relationship heatmap plot DONE')
+
+    logger$log("Create response ... ")
+    res$status <- 200 # status for good GET response
+    logger$log("Create response DONE ")
+    logger$log("END")
+
+    p
+  }
+}

@@ -69,13 +69,6 @@
       "Repository": "CRAN",
       "Hash": "d157e0ee1a93c257d9ee0f3fe918c1b4"
     },
-    "argparser": {
-      "Package": "argparser",
-      "Version": "0.7.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "ef22bb1e708cb17be24197f9d85ff481"
-    },
     "askpass": {
       "Package": "askpass",
       "Version": "1.1",
@@ -314,6 +307,13 @@
       "Repository": "CRAN",
       "Hash": "a525aba14184fec243f9eaec62fbed43"
     },
+    "igraph": {
+      "Package": "igraph",
+      "Version": "1.2.11",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "1d10cd31c2979f9c819ffe4d16b9dc2b"
+    },
     "isoband": {
       "Package": "isoband",
       "Version": "0.2.5",
@@ -393,10 +393,10 @@
     },
     "mgcv": {
       "Package": "mgcv",
-      "Version": "1.8-38",
+      "Version": "1.8-39",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "be3c61ffbb1e3d3b3df214d192ac5444"
+      "Hash": "055265005c238024e306fe0b600c89ff"
     },
     "mime": {
       "Package": "mime",
@@ -411,6 +411,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "6dfe8bf774944bd5595785e3229d8771"
+    },
+    "networkD3": {
+      "Package": "networkD3",
+      "Version": "0.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "38310ec4ddb1398359abdd603c151067"
     },
     "nlme": {
       "Package": "nlme",
@@ -460,13 +467,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "a367cf9e97db99014056d75f3a05b86c"
-    },
-    "png": {
-      "Package": "png",
-      "Version": "0.1-7",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "03b7076c234cb3331288919983326c55"
     },
     "praise": {
       "Package": "praise",

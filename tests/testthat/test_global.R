@@ -171,7 +171,85 @@ test_that("GET /LDplot", {
   expect_equal(resp$headers$`content-type`, "image/png")
 })
 
+# Test GET /pedNetwork ----
+test_that("GET /pedNetwork", {
 
+  # creat path and request
+  path <- paste0(host,"/pedNetwork")
+  query <- list(
+    ped_url = paste0(dtaPref, "/pedigree/testPedData_char.csv")
+  )
+
+
+  # send request
+  resp <- GET(path,
+              query = query)
+
+  # test status
+  expect_equal(resp$status_code, 200)
+
+  # test response content
+  expect_equal(resp$headers$`content-type`, "text/html; charset=UTF-8")
+})
+
+
+
+# Test GET /relmat-heatmap ----
+manplotExt <- c(".html", ".png")
+
+for (ext in manplotExt) {
+  test_that(paste0("GET /relmat-heatmap", ext), {
+
+    # create path and request
+    path <- paste0(host, paste0("/relmat-heatmap", ext))
+    query <- list(
+      relmat_url =  paste0(dtaPref, "/results/pedigreeRelationship.json")
+    )
+
+
+    # send request
+    resp <- GET(path,
+                query = query)
+
+    # test status
+    expect_equal(resp$status_code, 200)
+
+    # test response content
+    if (identical(ext, ".png")) {
+      expect_equal(resp$headers$`content-type`, "image/png")
+    } else {
+      expect_equal(resp$headers$`content-type`, "text/html; charset=UTF-8")
+    }
+  })
+}
+
+
+# Test POST /relmat-ped ----
+test_that("POST /relmat-ped", {
+
+  # create path and request
+  path <- paste0(host,"/relmat-ped")
+  query <- list(
+    ped_url = paste0(dtaPref, "/pedigree/testPedData_char.csv")
+  )
+
+
+  # send request
+  resp <- POST(path,
+               query = query)
+
+  # test status
+  expect_equal(resp$status_code, 200)
+
+  # test response content
+  res <- jsonlite::fromJSON(content(resp))
+  expect_is(res, "list")
+  expect_equal(names(res), c("relMat", "metadata"))
+  expect_is(res$metadata, "list")
+  expect_equal(names(res$metadata),
+               c("info", "date", "nInds", "pedFP"))
+  expect_is(res$relMat, "data.frame")
+})
 
 
 # end ----
