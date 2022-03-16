@@ -75,7 +75,7 @@ For manually testing, you can use these urls when the api is running in docker:
 file:///r-geno-tools-api/r-geno-tools-engine/data/results/gwasResult.json
 file:///r-geno-tools-api/r-geno-tools-engine/data/geno/testMarkerData01.vcf.gz
 file:///r-geno-tools-api/r-geno-tools-engine/data/pheno/testPhenoData01.csv
-file:///r-geno-tools-api/r-geno-tools-engine/data/pedigree/testPedData_char.csv.csv
+file:///r-geno-tools-api/r-geno-tools-engine/data/pedigree/testPedData_char.csv
 ```
 
 For trait this one is in the pheno file: `Flowering.time.at.Arkansas`
