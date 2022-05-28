@@ -76,9 +76,10 @@ genoApi$setApiSpec(
            description = "Endpoints related to gwas analysis"),
       list(name = "Plots",
            description = "Endpoints related to plots drawn from a GWAS model"),
+      list(name = "Relationship matrix",
+           description = "Endpoints related to relationship matrices"),
       list(name = "Crossing Simulation",
            description = "Endpoints related to crossing simulation"))
-    spec
   }
 )
 
@@ -235,12 +236,22 @@ initLog$log("Set `/relmat-ped`")
 genoApi <- genoApi %>% pr_post(
   path = "/relmat-ped",
   tags = "Relationship matrix",
-  comments = "Calculate a pedigree relationship matrix. This endpoint take Urls of a pedigree file and write an a json file to the give Url using a PUT request. It had been disign to work with amazon S3 services.",
+  comments = "Calculate a pedigree relationship matrix. This endpoint take Urls of a pedigree file and write an a json file to the given Url using a PUT request. It had been disign to work with amazon S3 services.",
   params = relmatped_params,
   handler = relmatped_handler,
   serializer = serializer_unboxed_json()
 )
 
+### /relmat-geno ----
+initLog$log("Set `/relmat-geno`")
+genoApi <- genoApi %>% pr_post(
+  path = "/relmat-geno",
+  tags = "Relationship matrix",
+  comments = "Calculate a genomic relationship matrix. This endpoint take Urls of a genetic file and write an a json file to the given Url using a PUT request. It had been disign to work with amazon S3 services.",
+  params = relmatgeno_params,
+  handler = relmatgeno_handler,
+  serializer = serializer_unboxed_json()
+)
 ### /relmat-heatmap.html ----
 initLog$log("Set `/relmat-heatmap.html`")
 genoApi <- genoApi %>% pr_get(

@@ -248,6 +248,31 @@ test_that("POST /relmat-ped", {
   expect_is(res$relMat, "data.frame")
 })
 
+# Test POST /relmat-geno ----
+test_that("POST /relmat-geno", {
+
+  # create path and request
+  path <- paste0(host,"/relmat-geno")
+  query <- list(
+    geno_url = paste0(dtaPref, "/geno/breedGame_geno.vcf.gz")
+  )
+
+  # send request
+  resp <- POST(path,
+               query = query)
+
+  # test status
+  expect_equal(resp$status_code, 200)
+
+  # test response content
+  res <- jsonlite::fromJSON(content(resp))
+  expect_is(res, "list")
+  expect_equal(names(res), c("relMat", "metadata"))
+  expect_is(res$metadata, "list")
+  expect_equal(names(res$metadata),
+               c("info", "date", "nInds", "genoFP"))
+  expect_is(res$relMat, "data.frame")
+})
 
 
 
