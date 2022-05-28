@@ -75,7 +75,9 @@ genoApi$setApiSpec(
       list(name = "GWAS",
            description = "Endpoints related to gwas analysis"),
       list(name = "Plots",
-           description = "Endpoints related to plots drawn from a GWAS model"))
+           description = "Endpoints related to plots drawn from a GWAS model"),
+      list(name = "Crossing Simulation",
+           description = "Endpoints related to crossing simulation"))
     spec
   }
 )
@@ -260,3 +262,17 @@ genoApi <- genoApi %>% pr_get(
   handler = create_relmatHeatmap_handler(interactive = FALSE),
   serializer = my_serializer_png
 )
+
+
+### /crossing-simulation ----
+initLog$log("Set `/crossing-simulation`")
+genoApi <- genoApi %>% pr_post(
+  path = "/crossing-simulation",
+  tags = "Crossing Simulation",
+  comments = "Simulate genotypes of progenies of given parents",
+  params = crossingSim_params,
+  handler = crossingSim_handler)
+
+
+
+

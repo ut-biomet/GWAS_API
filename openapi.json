@@ -930,6 +930,102 @@
         ],
         "tags": ["Plots"]
       }
+    },
+    "/crossing-simulation": {
+      "post": {
+        "summary": "Simulate genotypes of progenies of given parents",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "geno_url",
+            "description": "url of the phased genotype file of the parents",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "crossTable_url",
+            "description": "url of the crossing table data file (`csv` file of 2 or 3 columns). It must contain the names of the variables as its first line. The column 1 and 2 will be interpreted as the parents ids. The optional third column will be interpreted as the offspring base name.",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "SNPcoord_url",
+            "description": "url of the SNPs coordinates file (`csv` file). This `.csv` file should have 4 named columns:\n - `chr`: chromosome name holding the SNP\n - `physPos`: physical position of the SNP on the chromosome\n - `linkMapPos`: linkage map position of the SNP on the chromosome in Morgan\n - `SNPid`: ID of the SNP\n",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "chromosomeInfo_url",
+            "description": "url of the chromosomes information file (`csv` file). This `.csv` file should have 3 named columns:\n - `name`: chromosomes names\n - `length_phys`: chromosomes length in base pairs\n - `length_morgan`: chromosomes length in Morgan\n If this file is not provided, the chromosome lengths will be set to the largest SNPs position of each chromosome.",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nCross",
+            "description": "Number of cross to simulate for each parent pair defined in the crossing table.",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 10
+            }
+          },
+          {
+            "name": "upload_url",
+            "description": "url of the PUT request for saving the simulated vcf file",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "tags": ["Crossing Simulation"]
+      }
     }
   },
   "tags": [
@@ -944,6 +1040,10 @@
     {
       "name": "Plots",
       "description": "Endpoints related to plots drawn from a GWAS model"
+    },
+    {
+      "name": "Crossing Simulation",
+      "description": "Endpoints related to crossing simulation"
     }
   ]
 }

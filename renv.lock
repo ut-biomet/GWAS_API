@@ -13,6 +13,13 @@
     ]
   },
   "Packages": {
+    "AGHmatrix": {
+      "Package": "AGHmatrix",
+      "Version": "2.0.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "7025f40323c335142ab84c7fdbd18832"
+    },
     "MASS": {
       "Package": "MASS",
       "Version": "7.3-54",
@@ -69,6 +76,13 @@
       "Repository": "CRAN",
       "Hash": "d157e0ee1a93c257d9ee0f3fe918c1b4"
     },
+    "ape": {
+      "Package": "ape",
+      "Version": "5.6-2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "894108412a7ec23d5de85cdcce871c8b"
+    },
     "askpass": {
       "Package": "askpass",
       "Version": "1.1",
@@ -82,6 +96,18 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "543776ae6848fde2f48ff3816d0628bc"
+    },
+    "breedSimulatR": {
+      "Package": "breedSimulatR",
+      "Version": "0.3.2",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "ut-biomet",
+      "RemoteRepo": "breedSimulatR",
+      "RemoteRef": "master",
+      "RemoteSha": "cc5fcc032c3328a9b56d21c3f96d3312d3b3dcc8",
+      "Hash": "d42f08f513db1f2fb78604b2ce00550c"
     },
     "brew": {
       "Package": "brew",
@@ -117,6 +143,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "66a3834e54593c89d8beefb312347e58"
+    },
+    "cluster": {
+      "Package": "cluster",
+      "Version": "2.1.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "ce49bfe5bc0b3ecd43a01fe1b01c2243"
     },
     "colorspace": {
       "Package": "colorspace",
@@ -391,6 +424,13 @@
       "Repository": "CRAN",
       "Hash": "83d5dcb8ff75fc35d391ce41777524ae"
     },
+    "memuse": {
+      "Package": "memuse",
+      "Version": "4.2-1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "036935e7ecfa404c8c65045db9297736"
+    },
     "mgcv": {
       "Package": "mgcv",
       "Version": "1.8-39",
@@ -433,12 +473,26 @@
       "Repository": "CRAN",
       "Hash": "5406fd37ef0bf9b88c8a4f264d6ec220"
     },
+    "permute": {
+      "Package": "permute",
+      "Version": "0.9-7",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "abf0ca85c1c752e0d04f46334e635046"
+    },
     "pillar": {
       "Package": "pillar",
       "Version": "1.6.4",
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "60200b6aa32314ac457d3efbb5ccbd98"
+    },
+    "pinfsc50": {
+      "Package": "pinfsc50",
+      "Version": "1.2.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "5dac0cdf71c6800beb52326fbb1d4956"
     },
     "pkgconfig": {
       "Package": "pkgconfig",
@@ -643,12 +697,26 @@
       "Repository": "CRAN",
       "Hash": "c9c462b759a5cc844ae25b5942654d13"
     },
+    "vcfR": {
+      "Package": "vcfR",
+      "Version": "1.12.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "30497ceb662b1ed60fbf2a2b964e4e31"
+    },
     "vctrs": {
       "Package": "vctrs",
       "Version": "0.3.8",
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "ecf749a1b39ea72bd9b51b76292261f1"
+    },
+    "vegan": {
+      "Package": "vegan",
+      "Version": "2.6-2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "97bfb04067dc125eb0f00fda67801898"
     },
     "viridisLite": {
       "Package": "viridisLite",
@@ -698,6 +766,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "2826c5d9efb0a88f657c7a679c7106db"
+    },
+    "zoo": {
+      "Package": "zoo",
+      "Version": "1.8-10",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "277b8b4c5b7b47e664aebfe024a2092e"
     }
   }
 }

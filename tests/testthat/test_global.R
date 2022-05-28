@@ -5,9 +5,6 @@
 # Test file for r-geno-tools-api
 
 # init ----
-# create tempoary folder
-dir.create("tmp")
-
 
 # Test GET /echo ----
 test_that("GET /echo", {
@@ -252,5 +249,36 @@ test_that("POST /relmat-ped", {
 })
 
 
-# end ----
-unlink("tmp", recursive = TRUE, force = TRUE)
+
+
+
+# Test POST /crossing-simulation ----
+test_that("POST /crossing-simulation", {
+
+  # create path and request
+  path <- paste0(host,"/crossing-simulation")
+
+  query <- list(
+    geno_url = paste0(dtaPref, '/geno/breedGame_phasedGeno.vcf.gz'),
+    crossTable_url = paste0(dtaPref, '/crossingTable/breedGame_crossTable.csv'),
+    SNPcoord_url = paste0(dtaPref, '/SNPcoordinates/breedingGame_SNPcoord.csv'),
+    chromosomeInfo_url = paste0(dtaPref, '/chromosomesInformation/breedingGame_chrInfo.csv'),
+    nCross = 10
+  )
+
+  # send request
+  resp <- POST(path,
+               query = query)
+
+  # test status
+  expect_equal(resp$status_code, 201)
+
+  # test response content
+  resFile <- tempfile(fileext = '.vcf')
+  writeBin(content(resp), resFile)
+  source('../../r-geno-tools-engine/src/readWriteData.R')
+  source('../../r-geno-tools-engine/src/utils.R')
+  expect_error({
+    readGenoData(file = resFile)
+  }, NA)
+})

@@ -15,7 +15,9 @@ RUN apt-get update --allow-releaseinfo-change && apt-get install -y \
     pandoc \
     libhiredis-dev \
     libpng-dev \
-    python3
+    python3 \
+    zlib1g-dev \
+    pkg-config
 
 # install dependencies
 # install renv package
