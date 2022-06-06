@@ -275,6 +275,34 @@ test_that("POST /relmat-geno", {
 })
 
 
+# Test POST /relmat-combined ----
+test_that("POST /relmat-combined", {
+
+  # create path and request
+  path <- paste0(host,"/relmat-combined")
+  query <- list(
+    genoRelMat_url = paste0(dtaPref, "/results/breedGame_genoRelMat.json"),
+    pedRelMat_url = paste0(dtaPref, "/results/breedGame_pedRelMat.json")
+  )
+
+  # send request
+  resp <- POST(path,
+               query = query)
+
+  # test status
+  expect_equal(resp$status_code, 200)
+
+  # test response content
+  res <- jsonlite::fromJSON(content(resp))
+  expect_is(res, "list")
+  expect_equal(names(res), c("relMat", "metadata"))
+  expect_is(res$metadata, "list")
+  expect_equal(names(res$metadata),
+               c("info", "date", "nInds", "geno_relMatFP", "ped_relMatFP"))
+  expect_is(res$relMat, "data.frame")
+})
+
+
 
 
 # Test POST /crossing-simulation ----

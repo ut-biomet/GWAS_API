@@ -252,6 +252,18 @@ genoApi <- genoApi %>% pr_post(
   handler = relmatgeno_handler,
   serializer = serializer_unboxed_json()
 )
+
+### /relmat-combined ----
+initLog$log("Set `/relmat-combined`")
+genoApi <- genoApi %>% pr_post(
+  path = "/relmat-combined",
+  tags = "Relationship matrix",
+  comments = "Calculate a combined relationship matrix. This endpoint take Urls of a genetic relationship file and a pedigree relationship file and write an a json file to the given Url using a PUT request. It had been disign to work with amazon S3 services.",
+  params = relmatCombined_params,
+  handler = relmatCombined_handler,
+  serializer = serializer_unboxed_json()
+)
+
 ### /relmat-heatmap.html ----
 initLog$log("Set `/relmat-heatmap.html`")
 genoApi <- genoApi %>% pr_get(
