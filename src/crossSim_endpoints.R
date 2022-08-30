@@ -38,21 +38,6 @@ crossingSim_params <- list(
     type = "string",
     required = TRUE,
     isArray = FALSE),
-  "chromosomeInfo_url" = list(
-    desc = paste("url of the chromosomes information",
-                 "file (`csv` file). This `.csv` file should have",
-                 "3 named columns:\n",
-                 "- `name`: chromosomes names\n",
-                 "- `length_phys`: chromosomes length in",
-                 "base pairs\n",
-                 "- `length_morgan`: chromosomes length in",
-                 "Morgan\n",
-                 "If this file is not provided, the chromosome",
-                 "lengths will be set to the largest SNPs position",
-                 "of each chromosome."),
-    type = "string",
-    required = TRUE,
-    isArray = FALSE),
   "nCross" = list(
     desc = paste("Number of cross to simulate for each parent",
                  "pair defined in the crossing table."),
@@ -72,7 +57,6 @@ crossingSim_handler <- function(res,
                                 geno_url,
                                 crossTable_url,
                                 SNPcoord_url,
-                                chromosomeInfo_url,
                                 upload_url = NA,
                                 nCross = 10) {
   logger <- logger$new("/crossing-simulation")
@@ -102,7 +86,6 @@ crossingSim_handler <- function(res,
   crossingSimulation(genoUrl = geno_url,
                      crossTableUrl = crossTable_url,
                      SNPcoordUrl = SNPcoord_url,
-                     chrInfoUrl = chromosomeInfo_url,
                      nCross = nCross,
                      outFile = outFile)
 

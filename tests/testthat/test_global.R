@@ -315,7 +315,6 @@ test_that("POST /crossing-simulation", {
     geno_url = paste0(dtaPref, '/geno/breedGame_phasedGeno.vcf.gz'),
     crossTable_url = paste0(dtaPref, '/crossingTable/breedGame_crossTable.csv'),
     SNPcoord_url = paste0(dtaPref, '/SNPcoordinates/breedingGame_SNPcoord.csv'),
-    chromosomeInfo_url = paste0(dtaPref, '/chromosomesInformation/breedingGame_chrInfo.csv'),
     nCross = 10
   )
 
