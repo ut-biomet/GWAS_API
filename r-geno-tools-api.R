@@ -69,6 +69,7 @@ genoApi$setApiSpec(
                      url = "https://opensource.org/licenses/MIT"),
       version = "0.0.1"
     )
+
     spec$tags <- list(
       list(name = "Utils",
            description = "Endpoints for checking the API"),
@@ -79,7 +80,10 @@ genoApi$setApiSpec(
       list(name = "Relationship matrix",
            description = "Endpoints related to relationship matrices"),
       list(name = "Crossing Simulation",
-           description = "Endpoints related to crossing simulation"))
+           description = "Endpoints related to crossing simulation"),
+      list(name = "Progenies blups calculation",
+           description = "Endpoints related to progenies' blup variance and expected values")
+      )
     spec
   }
 )
@@ -298,5 +302,29 @@ genoApi <- genoApi %>% pr_post(
   handler = crossingSim_handler)
 
 
+### /progenyBlupCalc
+initLog$log("Set `/progenyBlupCalc`")
+genoApi <- genoApi %>% pr_post(
+  path = "/progenyBlupCalc",
+  tags = "Progenies blups calculation",
+  comments =  paste(
+    "Estimate the BLUPs' expected value and variance of the progenies of a",
+    "given crosses specifyed in the crossing table."
+  ),
+  params = progenyBlupCalc_params,
+  handler = progenyBlupCalc_handler)
 
 
+### /progenyBlup-plot ----
+initLog$log("Set `/progenyBlup-plot`")
+genoApi <- genoApi %>% pr_get(
+  path = "/progenyBlup-plot",
+  tags = "Plots",
+  comments =   paste(
+    "Draw a plot of the progenies BLUPs' expected values with error bars.",
+    "X axis is the crosses, and Y axis the blups. The points are located",
+    "at the expected value and the error bar length is the standard deviation."
+  ),
+  params = progenyBlupPlot_params,
+  handler = progenyBlupPlot_handler,
+  serializer = serializer_htmlwidget())

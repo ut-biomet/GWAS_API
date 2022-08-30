@@ -355,3 +355,65 @@ create_relmatHeatmap_handler <- function(interactive){
     p
   }
 }
+
+
+
+# /progenyBlup-plot ----
+progenyBlupPlot_params <- list(
+  "progenyBlup_url" = list(
+    desc = "url of the relationship matrix file (.json)",
+    type = "string",
+    required = TRUE,
+    isArray = FALSE),
+  "sorting" = list(
+    desc =  paste(
+      "method to sort the individuals (X axis) can be:\\n",
+      '- "asc": sort the BLUP expected value in ascending order',
+      "(from left to right)\\n",
+      '- "dec": sort the BLUP expected value in decreasing order',
+      "(from left to right)\\n",
+      "- any other value will sort the individuals in alphabetical order",
+      "(from left to right)\\n",
+      "Default is : Alphabetical"),
+    type = "string",
+    required = FALSE,
+    isArray = FALSE
+  )
+)
+
+
+progenyBlupPlot_handler <- function(res,
+                                    progenyBlup_url,
+                                    sorting = "alphabetical"){
+
+  logger <- logger$new("/progenyBlup-plot")
+
+  inputParamsNames <- names(formals(rlang::current_fn()))
+  inputParamsNames <- inputParamsNames[!inputParamsNames %in% c('res')]
+  inputParams <- as.list(environment())[inputParamsNames]
+
+  out <- list(
+    inputParams = inputParams
+  )
+
+  logger$log("call with parameters:")
+  logger$log(time = FALSE, context = FALSE,
+             paste0(names(out$inputParams), ": ", out$inputParams,
+                    collapse = '\n\t')
+  )
+
+
+  logger$log('Draw progenies blups plot ...')
+  p <- draw_progBlupsPlot(progEstimUrl = progenyBlup_url,
+                          sorting = sorting,
+                          outFile = NULL)
+  logger$log('Draw relationship heatmap plot DONE')
+
+  logger$log("Create response ... ")
+  res$status <- 200 # status for good GET response
+  logger$log("Create response DONE ")
+  logger$log("END")
+
+  p
+
+}

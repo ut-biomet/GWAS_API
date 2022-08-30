@@ -334,3 +334,58 @@ test_that("POST /crossing-simulation", {
     readGenoData(file = resFile)
   }, NA)
 })
+
+
+
+
+# Test POST /progenyBlupCalc  ----
+test_that("POST /progenyBlupCalc", {
+
+  # create path and request
+  path <- paste0(host,"/progenyBlupCalc")
+
+  query <- list(
+    geno_url = paste0(dtaPref, '/geno/breedGame_phasedGeno.vcf.gz'),
+    crossTable_url = paste0(dtaPref, '/crossingTable/breedGame_small_crossTable.csv'),
+    SNPcoord_url = paste0(dtaPref, '/SNPcoordinates/breedingGame_SNPcoord.csv'),
+    markerEffects_url = paste0(dtaPref, '/markerEffects/breedGame_markerEffects.csv')
+  )
+
+  # send request
+  resp <- POST(path,
+               query = query)
+
+  # test status
+  expect_equal(resp$status_code, 200)
+
+  # test response content
+  res <- jsonlite::fromJSON(content(resp)[[1]])
+  expect_is(res, "data.frame")
+
+})
+
+
+
+
+# Test GET /progenyBlup-plot  ----
+test_that("GET /progenyBlup-plot", {
+
+  # create path and request
+  path <- paste0(host,"/progenyBlup-plot")
+
+  query <- list(
+    progenyBlup_url = paste0(dtaPref, '/results/progenyBlupEstimation.json'),
+    sorting = "Alphabetical"
+  )
+
+  # send request
+  resp <- GET(path,
+              query = query)
+
+  # test status
+  expect_equal(resp$status_code, 200)
+
+  # test response content
+  expect_equal(resp$headers$`content-type`, "text/html; charset=UTF-8")
+
+})
