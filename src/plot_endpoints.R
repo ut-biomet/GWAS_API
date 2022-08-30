@@ -56,9 +56,9 @@ create_manplot_handler <- function(interactive){
     # # save call time.
     # callTime <- Sys.time()
     if (interactive) {
-      logger <- logger$new("/manplot.html")
+      logger <- Logger$new("/manplot.html")
     } else {
-      logger <- logger$new("/manplot.png")
+      logger <- Logger$new("/manplot.png")
     }
 
   inputParamsNames <- names(formals(rlang::current_fn()))
@@ -168,7 +168,7 @@ LDplot_params <- list(
 )
 
 LDplot_handler <- function(res, geno_url, from, to){
-  logger <- logger$new("/LDplot")
+  logger <- Logger$new("/LDplot")
 
   inputParamsNames <- names(formals(rlang::current_fn()))
   inputParamsNames <- inputParamsNames[!inputParamsNames %in% c('res')]
@@ -275,7 +275,7 @@ pedNetwork_params <- list(
 )
 
 pedNetwork_handler <- function(res, ped_url, header = TRUE, unknown_string = ''){
-  logger <- logger$new("/pedNetwork")
+  logger <- Logger$new("/pedNetwork")
 
   inputParamsNames <- names(formals(rlang::current_fn()))
   inputParamsNames <- inputParamsNames[!inputParamsNames %in% c('res')]
@@ -323,7 +323,7 @@ relmatHeatmap_params <- list(
 create_relmatHeatmap_handler <- function(interactive){
 
   function(res, relmat_url){
-    logger <- logger$new("/relmat-heatmap")
+    logger <- Logger$new("/relmat-heatmap")
 
     inputParamsNames <- names(formals(rlang::current_fn()))
     inputParamsNames <- inputParamsNames[!inputParamsNames %in% c('res')]
@@ -386,7 +386,7 @@ progenyBlupPlot_handler <- function(res,
                                     progenyBlup_url,
                                     sorting = "alphabetical"){
 
-  logger <- logger$new("/progenyBlup-plot")
+  logger <- Logger$new("/progenyBlup-plot")
 
   inputParamsNames <- names(formals(rlang::current_fn()))
   inputParamsNames <- inputParamsNames[!inputParamsNames %in% c('res')]

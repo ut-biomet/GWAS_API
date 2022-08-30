@@ -10,7 +10,7 @@ ip <- "127.0.0.1"
 port <- 8080
 host <- paste0("http://", ip, ":", port)
 
-docker <- TRUE
+docker <- FALSE
 if (docker) {
     dtaPref <- "file:///r-geno-tools-api/r-geno-tools-engine/data"
 } else {

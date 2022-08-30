@@ -15,7 +15,7 @@ echo_params <- list(
 )
 
 echo_handler <- function(msg=""){
-  logger <- logger$new("/echo")
+  logger <- Logger$new("/echo")
   inputParamsNames <- names(formals(rlang::current_fn()))
   inputParamsNames <- inputParamsNames[!inputParamsNames %in% c('res')]
   inputParams <- as.list(environment())[inputParamsNames]
@@ -36,7 +36,7 @@ echo_handler <- function(msg=""){
 # /version ----
 version_params <- list()
 version_handler <- function(){
-  logger <- logger$new("/version")
+  logger <- Logger$new("/version")
   logger$log("call with no parameters")
   out <- list()
 

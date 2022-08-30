@@ -37,7 +37,7 @@ relmatped_handler <- function(res,
                               upload_url = NA,
                               header = TRUE,
                               unknown_string = ''){
-  logger <- logger$new("/relmat-ped")
+  logger <- Logger$new("/relmat-ped")
   # save call time.
   callTime <- Sys.time()
   inputParamsNames <- names(formals(rlang::current_fn()))
@@ -153,7 +153,7 @@ relmatgeno_params <- list(
 relmatgeno_handler <- function(res,
                                geno_url,
                                upload_url = NA){
-  logger <- logger$new("/relmat-geno")
+  logger <- Logger$new("/relmat-geno")
   # save call time.
   callTime <- Sys.time()
   inputParamsNames <- names(formals(rlang::current_fn()))
@@ -266,7 +266,7 @@ relmatCombined_handler <- function(res,
                                    genoRelMat_url,
                                    pedRelMat_url,
                                    upload_url = NA){
-  logger <- logger$new("/relmat-geno")
+  logger <- Logger$new("/relmat-geno")
   # save call time.
   callTime <- Sys.time()
   inputParamsNames <- names(formals(rlang::current_fn()))

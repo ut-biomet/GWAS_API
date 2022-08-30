@@ -59,7 +59,7 @@ crossingSim_handler <- function(res,
                                 SNPcoord_url,
                                 upload_url = NA,
                                 nCross = 10) {
-  logger <- logger$new("/crossing-simulation")
+  logger <- Logger$new("/crossing-simulation")
   # save call time.
   callTime <- Sys.time()
   inputParamsNames <- names(formals(rlang::current_fn()))

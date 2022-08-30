@@ -37,7 +37,7 @@ sapply(list.files("src/",
        source)
 
 # create initialization logger
-initLog <- logger$new("r-geno-tools-api-INIT")
+initLog <- Logger$new("r-geno-tools-api-INIT")
 
 
 # Define the default png serializer for the images
@@ -91,7 +91,7 @@ genoApi$setApiSpec(
 
 # Set filters ----
 initLog$log("Set api filters")
-filterLogger <- logger$new("r-geno-tools-api-REQUESTS")
+filterLogger <- Logger$new("r-geno-tools-api-REQUESTS")
 # Log some information about the incoming requests
 genoApi <- genoApi %>%
   pr_filter("logger",

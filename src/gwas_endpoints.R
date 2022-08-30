@@ -65,7 +65,7 @@ gwas_handler <- function(res,
                          thresh_maf = 0.05,
                          thresh_callrate = 0.9){
 
-  logger <- logger$new("/gwas")
+  logger <- Logger$new("/gwas")
   # save call time.
   callTime <- Sys.time()
   inputParamsNames <- names(formals(rlang::current_fn()))
@@ -255,7 +255,7 @@ adjustedResults_handler <- function(res,
                                     filter_pAdj = 1,
                                     filter_nPoints = 10^100,
                                     filter_quant = 1) {
-  logger <- logger$new("/adjustedResults")
+  logger <- Logger$new("/adjustedResults")
   inputParamsNames <- names(formals(rlang::current_fn()))
   inputParamsNames <- inputParamsNames[!inputParamsNames %in% c('res')]
   inputParams <- as.list(environment())[inputParamsNames]

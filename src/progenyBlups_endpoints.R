@@ -69,7 +69,7 @@ progenyBlupCalc_handler <- function(res,
                                     SNPcoord_url,
                                     markerEffects_url,
                                     upload_url = NA) {
-  logger <- logger$new("/progenyBlupCalc")
+  logger <- Logger$new("/progenyBlupCalc")
 
   # save call time.
   callTime <- Sys.time()
