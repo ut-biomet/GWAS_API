@@ -80,6 +80,7 @@ genoApi$setApiSpec(
            description = "Endpoints related to relationship matrices"),
       list(name = "Crossing Simulation",
            description = "Endpoints related to crossing simulation"))
+    spec
   }
 )
 
